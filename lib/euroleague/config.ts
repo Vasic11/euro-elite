@@ -19,3 +19,6 @@ export const SEASON_LABEL = (() => {
   const year = Number(SEASON_CODE.slice(1));
   return Number.isNaN(year) ? SEASON_CODE : `${year}-${String(year + 1).slice(2)}`;
 })();
+
+/** Vremenska zona za prikaz datuma utakmica (server radi u UTC-u). */
+export const DISPLAY_TIME_ZONE = "Europe/Belgrade";

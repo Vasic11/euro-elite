@@ -8,6 +8,7 @@ const NAV_ITEMS = [
   { href: "/", label: "Home" },
   { href: "/players", label: "Players" },
   { href: "/teams", label: "Teams" },
+  { href: "/standings", label: "Standings" },
 ];
 
 function isActive(pathname: string, href: string) {
@@ -24,12 +25,12 @@ export function Navbar() {
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-8">
         <Link href="/" className="flex items-center gap-2.5" aria-label="EuroElite home">
           <Logo />
-          <span className="font-display text-2xl leading-none font-extrabold tracking-tight">
+          <span className="hidden font-display text-2xl leading-none font-extrabold tracking-tight sm:inline">
             Euro<span className="text-accent-ink">Elite</span>
           </span>
         </Link>
 
-        <nav className="flex h-full items-stretch gap-1 sm:gap-4">
+        <nav className="flex h-full items-stretch gap-0.5 sm:gap-4">
           {NAV_ITEMS.map((item) => {
             const active = isActive(pathname, item.href);
             return (

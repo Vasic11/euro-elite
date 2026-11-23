@@ -29,7 +29,9 @@ app/                          rute (svaki folder = URL)
   players/page.tsx            /players          svi igrači + filteri
   players/[code]/page.tsx     /players/:code    profil igrača
   teams/page.tsx              /teams            svi klubovi
-  teams/[code]/page.tsx       /teams/zal        klub: trener, učinak, igrači po pozicijama
+  teams/[code]/page.tsx       /teams/zal        klub: trener, naredna utakmica, tabovi Roster/Results/Schedule/Standings
+  standings/page.tsx          /standings        tabela lige i naredno kolo
+  template.tsx                                  animacija ulaska svake stranice
   loading.tsx, error.tsx, not-found.tsx
 
 components/
@@ -79,6 +81,7 @@ Zvanični EuroLeague API (`api-live.euroleague.net`). Odgovori se keširaju 1h, 
 - [x] Živi podaci iz zvaničnog API-ja
 - [x] Prave rute: hub, igrači, profil, timovi
 - [x] Forma: PIR po kolima, prozor 3/5/10, poređenje sa sezonom
+- [x] Tabela lige, rezultati i raspored po klubu
 - [ ] Baza + noćna sinhronizacija (istorija, transferi)
 - [ ] Fantasy: optimalan tim za zadati budžet
 

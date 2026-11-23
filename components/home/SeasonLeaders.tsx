@@ -9,7 +9,7 @@ import { playerHref } from "@/components/players/PlayerCard";
 /** Top 3 u svakoj kategoriji. Rang je stvarni redosled, pa ima smisla da bude numerisan. */
 export function SeasonLeaders({ players }: { players: Player[] }) {
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {LEADER_CATEGORIES.map((category) => {
         const leaders = leadersFor(players, category.key);
         return (

@@ -1,3 +1,4 @@
+import { DISPLAY_TIME_ZONE } from "./config";
 import type { Position } from "./types";
 
 /**
@@ -70,3 +71,17 @@ export const POSITION_LABEL: Record<Position, string> = {
   Forward: "Forward",
   Center: "Center",
 };
+
+const gameDateFormat = new Intl.DateTimeFormat("en-GB", {
+  weekday: "short",
+  day: "numeric",
+  month: "short",
+  hour: "2-digit",
+  minute: "2-digit",
+  timeZone: DISPLAY_TIME_ZONE,
+});
+
+/** "2026-11-24T18:00:00Z" -> "Tue 24 Nov, 19:00" (beogradsko vreme). */
+export function formatGameDate(iso: string): string {
+  return gameDateFormat.format(new Date(iso));
+}

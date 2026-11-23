@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { formatPersonName, normalizeForSearch, splitName } from "./format";
+import {
+  formatGameDate,
+  formatPersonName,
+  normalizeForSearch,
+  splitName,
+} from "./format";
 
 describe("formatPersonName", () => {
   it('pretvara "PREZIME, IME" u "Ime Prezime"', () => {
@@ -33,5 +38,12 @@ describe("splitName", () => {
 
   it("jedno ime ide u prezime", () => {
     expect(splitName("Neymar")).toEqual({ first: "", last: "Neymar" });
+  });
+});
+
+describe("formatGameDate", () => {
+  it("prikazuje beogradsko vreme", () => {
+    // 18:00 UTC u novembru je 19:00 u Beogradu (UTC+1)
+    expect(formatGameDate("2026-11-24T18:00:00Z")).toBe("Tue 24 Nov, 19:00");
   });
 });

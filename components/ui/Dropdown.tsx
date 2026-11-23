@@ -52,7 +52,7 @@ export function Dropdown<T extends string>({
         aria-haspopup="listbox"
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
-        className="flex h-11 min-w-[150px] items-center justify-between gap-3 rounded-md border border-line bg-paper px-3.5 text-left text-sm transition-colors hover:border-ink/30"
+        className="flex h-10 min-w-[150px] items-center justify-between gap-3 rounded-full bg-canvas px-4 text-left text-sm transition-colors hover:bg-line"
       >
         <span>
           <span className="text-ink-faint">{label}: </span>
@@ -77,7 +77,7 @@ export function Dropdown<T extends string>({
             style={{ transformOrigin: align === "right" ? "top right" : "top left" }}
             role="listbox"
             aria-label={label}
-            className={`absolute top-full z-50 mt-1.5 max-h-72 w-56 overflow-y-auto rounded-md border border-line bg-paper p-1 shadow-lg ${
+            className={`absolute top-full z-50 mt-1.5 max-h-72 w-56 overflow-y-auto rounded-2xl border border-line bg-paper p-1.5 shadow-xl ${
               align === "right" ? "right-0" : "left-0"
             }`}
           >
@@ -93,7 +93,7 @@ export function Dropdown<T extends string>({
                       onChange(option.value);
                       setOpen(false);
                     }}
-                    className={`flex w-full items-center justify-between rounded px-3 py-2 text-left text-sm transition-colors hover:bg-canvas ${
+                    className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm transition-colors hover:bg-canvas ${
                       selected ? "font-semibold text-accent-ink" : ""
                     }`}
                   >

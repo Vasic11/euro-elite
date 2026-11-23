@@ -6,10 +6,11 @@ import { useDeferredValue, useMemo, useState } from "react";
 import { normalizeForSearch } from "@/lib/euroleague/format";
 import type { Player, Position } from "@/lib/euroleague/types";
 import { Dropdown } from "@/components/ui/Dropdown";
+import { Segmented } from "@/components/ui/Segmented";
 
 import { AnimatedPlayerGrid } from "./AnimatedPlayerGrid";
 
-type SortKey = "pir" | "points" | "rebounds" | "assists";
+type SortKey = "pir" | "points" | "rebounds" | "assists" | "steals" | "blocks";
 
 /** Koliko kartica prikazujemo odjednom; "Show more" dodaje još toliko. */
 const PAGE_SIZE = 24;
@@ -23,9 +24,11 @@ const POSITION_OPTIONS: { value: Position | "all"; label: string }[] = [
 
 const SORT_OPTIONS: { value: SortKey; label: string }[] = [
   { value: "pir", label: "PIR" },
-  { value: "points", label: "Points" },
-  { value: "rebounds", label: "Rebounds" },
-  { value: "assists", label: "Assists" },
+  { value: "points", label: "PTS" },
+  { value: "rebounds", label: "REB" },
+  { value: "assists", label: "AST" },
+  { value: "steals", label: "STL" },
+  { value: "blocks", label: "BLK" },
 ];
 
 /**
@@ -73,8 +76,9 @@ export function PlayerExplorer({ players }: { players: Player[] }) {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center">
-        <label className="flex h-11 flex-1 items-center gap-2.5 rounded-md border border-line bg-paper px-3.5 focus-within:border-ink/40">
+      {/* Jedna zaobljena traka: pretraga, pa filteri koji se vide odmah */}
+      <div className="flex flex-col gap-2 rounded-3xl bg-paper p-2 ring-1 ring-line lg:flex-row lg:items-center">
+        <label className="flex h-10 shrink-0 items-center gap-2.5 rounded-full bg-canvas px-4 transition-shadow focus-within:ring-2 focus-within:ring-accent lg:flex-1">
           <svg
             viewBox="0 0 16 16"
             className="h-4 w-4 shrink-0 text-ink-faint"
@@ -100,8 +104,9 @@ export function PlayerExplorer({ players }: { players: Player[] }) {
           />
         </label>
 
+        {/* Na užim ekranima filteri prelaze u novi red (vodoravni skrol bi odsekao meni za državu) */}
         <div className="flex flex-wrap items-center gap-2">
-          <Dropdown
+          <Segmented
             label="Position"
             value={position}
             options={POSITION_OPTIONS}
@@ -113,12 +118,11 @@ export function PlayerExplorer({ players }: { players: Player[] }) {
             options={nationOptions}
             onChange={setNation}
           />
-          <Dropdown
-            label="Sort"
+          <Segmented
+            label="Sort by"
             value={sort}
             options={SORT_OPTIONS}
             onChange={setSort}
-            align="right"
           />
         </div>
       </div>

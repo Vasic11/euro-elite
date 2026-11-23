@@ -1,7 +1,10 @@
 import type { Player, SeasonAverages } from "@/lib/euroleague/types";
 
 export type LeaderCategory = {
-  key: keyof Pick<SeasonAverages, "pir" | "points" | "rebounds" | "assists">;
+  key: keyof Pick<
+    SeasonAverages,
+    "pir" | "points" | "rebounds" | "assists" | "steals" | "blocks"
+  >;
   label: string;
 };
 
@@ -10,6 +13,8 @@ export const LEADER_CATEGORIES: LeaderCategory[] = [
   { key: "points", label: "Points" },
   { key: "rebounds", label: "Rebounds" },
   { key: "assists", label: "Assists" },
+  { key: "steals", label: "Steals" },
+  { key: "blocks", label: "Blocks" },
 ];
 
 /**
