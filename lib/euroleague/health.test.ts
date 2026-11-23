@@ -70,4 +70,33 @@ describe("runHealthChecks", () => {
     expect(checks.find((c) => c.name === "clubs")?.ok).toBe(false);
     responses["/clubs"] = { data: [club] };
   });
+
+  it("uzima box score najnovije utakmice, iako API vraća raspored od novijih ka starijim", async () => {
+    const games = responses["/games"];
+    responses["/games"] = {
+      data: [
+        {
+          gameCode: 9,
+          round: 2,
+          played: true,
+          utcDate: "2026-10-08T18:00:00Z",
+          local: side,
+          road: side,
+        },
+        {
+          gameCode: 7,
+          round: 1,
+          played: true,
+          utcDate: "2026-10-01T18:00:00Z",
+          local: side,
+          road: side,
+        },
+      ],
+    };
+    responses["/games/9/stats"] = { local: { players: [] }, road: { players: [] } };
+    stubFetch();
+    const checks = await runHealthChecks();
+    expect(checks.at(-1)?.name).toBe("box score 9");
+    responses["/games"] = games;
+  });
 });

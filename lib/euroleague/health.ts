@@ -53,7 +53,14 @@ export async function runHealthChecks(): Promise<HealthCheck[]> {
     checks.push(rosterCheck);
   }
 
-  const lastPlayed = schedule?.data.filter((g) => g.played).at(-1);
+  // API vraća raspored od novijih ka starijim utakmicama, pa ne uzimamo poslednji
+  // element niza, nego utakmicu sa najkasnijim datumom.
+  const lastPlayed = schedule?.data
+    .filter((g) => g.played)
+    .reduce<(typeof schedule.data)[number] | undefined>(
+      (latest, g) => (!latest || g.utcDate > latest.utcDate ? g : latest),
+      undefined,
+    );
   if (lastPlayed) {
     const [boxCheck] = await check(
       `box score ${lastPlayed.gameCode}`,
