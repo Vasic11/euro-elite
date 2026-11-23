@@ -54,3 +54,19 @@ export function normalizeForSearch(text: string): string {
     .replace(/đ/g, "d")
     .replace(/dj/g, "d");
 }
+
+/**
+ * Deli ime na ime i prezime za prikaz u stilu "Sasha / VEZENKOV".
+ * Prva reč je ime, ostatak prezime ("Nigel Hayes-Davis", "Nando De Colo" -> "De Colo").
+ */
+export function splitName(name: string): { first: string; last: string } {
+  const space = name.indexOf(" ");
+  if (space === -1) return { first: "", last: name };
+  return { first: name.slice(0, space), last: name.slice(space + 1) };
+}
+
+export const POSITION_LABEL: Record<Position, string> = {
+  Guard: "Guard",
+  Forward: "Forward",
+  Center: "Center",
+};

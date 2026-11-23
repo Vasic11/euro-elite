@@ -2,7 +2,7 @@
 
 Scouting platforma za EuroLeague: živa statistika igrača i timova, profil igrača sa radar dijagramom, a uskoro i forma kroz kola i fantasy predlozi.
 
-**Stack:** Next.js 16 (App Router) · React 19 · TypeScript · Tailwind CSS 4 · Zod · Framer Motion
+**Stack:** Next.js 16 (App Router) · React 19 · TypeScript · Tailwind CSS 4 · Zod · Framer Motion · Vitest
 
 ## Pokretanje
 
@@ -33,7 +33,8 @@ app/                          rute (svaki folder = URL)
 
 components/
   layout/Navbar.tsx           navigacija (aktivni tab prema URL-u)
-  players/                    PlayerCard, PlayerGrid, PlayerExplorer, RadarChart, PlayerImage
+  home/                       FeaturedPlayer, SeasonLeaders, ClubStrip
+  players/                    PlayerCard, PlayerPanel (foto-ploča),, PlayerGrid, PlayerExplorer, RadarChart, PlayerImage
   players/form/               forma: PlayerForm (server), FormSection, PirChart
   teams/TeamAccordion.tsx
   ui/                         opšte komponente: Dropdown, StatTile
@@ -57,7 +58,9 @@ lib/stats/form.ts             forma (čiste funkcije, pokrivene testovima)
 
 - Stranice su serverske komponente i one pribavljaju podatke. `"use client"` stavljamo samo gde treba stanje ili browser API.
 - Komponente koriste tipove iz `types.ts`, nikad oblik API-ja direktno.
-- Boje dolaze iz tokena u `globals.css` (`bg-euro-card`, `text-euro-neon`...), a ne iz hex vrednosti.
+- Boje i fontovi dolaze iz tokena u `globals.css` (`bg-paper`, `text-accent-ink`, `font-display`...), a ne iz hex vrednosti.
+- Narandžasta `accent` je za površine i linije; za narandžasti tekst na beloj koristi se `accent-ink` (AA kontrast).
+- Fontovi: Barlow Condensed za naslove, imena i brojeve, Barlow za tekst (npm `@fontsource`, bez Google Fonts poziva).
 
 ## Izvor podataka
 

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { TeamAccordion } from "@/components/teams/TeamAccordion";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { getTeams } from "@/lib/euroleague/players";
 
 export const metadata: Metadata = {
@@ -8,15 +9,20 @@ export const metadata: Metadata = {
   description: "EuroLeague rosters with per-player averages.",
 };
 
-export default async function TeamsPage() {
-  const teams = await getTeams();
+type Props = { searchParams: Promise<{ team?: string | string[] }> };
+
+export default async function TeamsPage({ searchParams }: Props) {
+  const [teams, { team }] = await Promise.all([getTeams(), searchParams]);
+  const initialExpanded =
+    typeof team === "string" && teams.some((t) => t.code === team) ? team : null;
 
   return (
-    <div className="space-y-6">
-      <header className="border-euro-border border-b pb-5">
-        <h1 className="text-3xl font-black text-white">Teams Terminal</h1>
-      </header>
-      <TeamAccordion teams={teams} />
+    <div>
+      <PageHeader
+        title="Teams"
+        description="Open a club to see its roster and how each player is doing this season."
+      />
+      <TeamAccordion teams={teams} initialExpanded={initialExpanded} />
     </div>
   );
 }

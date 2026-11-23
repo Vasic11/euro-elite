@@ -1,30 +1,53 @@
 @import "tailwindcss";
 
 /*
- * Dizajn tokeni: sve boje aplikacije na jednom mestu.
- * Tailwind od svake --color-* promenljive pravi klase: bg-euro-card, border-euro-border, text-euro-neon...
- * Ako hoćeš da promeniš boju, menjaš je samo ovde.
+ * Dizajn tokeni: sve boje i fontovi aplikacije na jednom mestu.
+ * Tailwind od svake --color-* promenljive pravi klase (bg-paper, text-ink-muted, border-line...),
+ * a od --font-* klase font-display i font-sans.
  */
 @theme {
-  --color-euro-bg: #090d12;
-  --color-euro-card: #11161e;
-  --color-euro-surface: #1a222f;
-  --color-euro-border: #1e2530;
-  --color-euro-border-soft: #1c232e;
-  --color-euro-neon: #d4f03d;
+  --color-canvas: #f2f2f0; /* pozadina stranice */
+  --color-paper: #ffffff; /* kartice */
+  --color-panel: #e9e9e6; /* foto-ploča iza igrača */
+  --color-line: #e2e2de; /* ivice i razdelnici */
+  --color-ink: #000000; /* glavni tekst */
+  --color-ink-muted: #5b5f66; /* sporedni tekst (7:1 na beloj) */
+  --color-ink-faint: #8a8e95; /* najmanje bitan tekst */
+  --color-accent: #f56e0f; /* narandžasta: površine, trake, linije */
+  --color-accent-ink: #c2560a; /* narandžasta za tekst na beloj (AA kontrast) */
+  --color-accent-soft: #fdeadb; /* svetla narandžasta za pozadine */
+
+  --font-sans: "Barlow", system-ui, sans-serif;
+  --font-display: "Barlow Condensed", "Barlow", system-ui, sans-serif;
 }
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 body {
-  background-color: var(--color-euro-bg);
-  color: white;
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-feature-settings: "tnum"; /* brojevi iste širine: kolone statistike se poravnaju */
 }
 
 ::selection {
-  background-color: var(--color-euro-neon);
+  background-color: var(--color-accent);
   color: black;
+}
+
+/* Vidljiv fokus za navigaciju tastaturom, svuda isti. */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

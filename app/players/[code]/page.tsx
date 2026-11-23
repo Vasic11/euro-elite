@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
 import { PlayerForm, PlayerFormSkeleton } from "@/components/players/form/PlayerForm";
-import { PlayerImage } from "@/components/players/PlayerImage";
+import { PlayerPanel } from "@/components/players/PlayerPanel";
 import { RadarChart } from "@/components/players/RadarChart";
 import { StatTile } from "@/components/ui/StatTile";
-import { ageFrom, formatStat } from "@/lib/euroleague/format";
+import { ageFrom, formatStat, POSITION_LABEL, splitName } from "@/lib/euroleague/format";
 import { getPlayer } from "@/lib/euroleague/players";
 
 type Props = { params: Promise<{ code: string }> };
@@ -17,133 +18,139 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return player
     ? {
         title: player.name,
-        description: `${player.name} – ${player.team.name} season stats.`,
+        description: `${player.name}, ${player.team.name}: season stats and current form.`,
       }
     : { title: "Player not found" };
 }
 
-/** Profil igrača: /players/[code]. Svaki igrač sada ima svoj URL koji može da se podeli. */
+/** Profil igrača: /players/[code]. */
 export default async function PlayerPage({ params }: Props) {
   const { code } = await params;
   const player = await getPlayer(code);
   if (!player) notFound(); // prikazuje app/not-found.tsx
 
   const { averages } = player;
+  const { first, last } = splitName(player.name);
   const age = ageFrom(player.birthDate);
 
-  const details: [string, string][] = [
-    ["Nationality", player.country ?? "—"],
-    ["Position", player.position ?? "—"],
+  const facts: [string, string][] = [
+    ["Position", player.position ? POSITION_LABEL[player.position] : "—"],
     ["Height", player.heightCm ? `${player.heightCm} cm` : "—"],
     ["Weight", player.weightKg ? `${player.weightKg} kg` : "—"],
     ["Age", age != null ? String(age) : "—"],
-    ["Jersey", player.jerseyNumber ? `#${player.jerseyNumber}` : "—"],
+    ["Nationality", player.country ?? "—"],
   ];
 
   return (
-    <div>
+    <div className="space-y-6">
       <Link
         href="/players"
-        className="mb-6 inline-flex items-center gap-2 text-xs font-bold tracking-widest text-gray-500 uppercase transition select-none hover:text-white"
+        className="text-ink-muted hover:text-ink inline-flex items-center gap-1.5 text-sm font-semibold"
       >
-        <span aria-hidden>🡨</span> Back to players
+        <span aria-hidden>←</span> All players
       </Link>
 
-      <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12">
-        <aside className="space-y-4 lg:col-span-4">
-          <div className="border-euro-border bg-euro-card relative h-[440px] overflow-hidden rounded-3xl border shadow-xl">
-            <PlayerImage
-              src={player.imageUrl}
-              name={player.name}
-              sizes="(min-width: 1024px) 33vw, 100vw"
-            />
-            {player.position && (
-              <span className="bg-euro-neon absolute bottom-6 left-6 z-10 rounded-lg px-3 py-1.5 text-[10px] font-black tracking-wider text-black uppercase shadow-lg">
-                {player.position}
-              </span>
-            )}
+      <section className="bg-paper ring-line grid overflow-hidden rounded-lg ring-1 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+        <div className="relative aspect-square md:aspect-auto md:min-h-[460px]">
+          <PlayerPanel
+            player={player}
+            size="hero"
+            priority
+            sizes="(min-width: 768px) 40vw, 100vw"
+          />
+        </div>
+
+        <div className="flex flex-col gap-8 p-6 sm:p-8">
+          <div>
+            <p className="text-ink-muted text-2xl leading-tight">{first}</p>
+            <h1 className="font-display text-6xl leading-[0.88] font-extrabold uppercase sm:text-7xl">
+              {last}
+            </h1>
+            <p className="mt-3 flex items-center gap-2 font-semibold">
+              {player.team.crestUrl && (
+                <Image
+                  src={player.team.crestUrl}
+                  alt=""
+                  width={28}
+                  height={28}
+                  className="h-7 w-7 object-contain"
+                />
+              )}
+              {player.team.name}
+              {player.jerseyNumber && (
+                <span className="text-ink-muted font-normal">#{player.jerseyNumber}</span>
+              )}
+            </p>
           </div>
 
-          <dl className="border-euro-border bg-euro-card space-y-1 rounded-2xl border p-2.5 text-xs font-medium shadow-lg">
-            {details.map(([label, value]) => (
-              <div
-                key={label}
-                className="bg-euro-bg/40 flex justify-between rounded-xl p-3"
-              >
-                <dt className="text-gray-500">{label}</dt>
-                <dd className="font-bold text-white">{value}</dd>
+          <dl className="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-5">
+            {facts.map(([label, value]) => (
+              <div key={label} className="flex flex-col-reverse">
+                <dt className="text-ink-muted text-xs">{label}</dt>
+                <dd className="font-semibold">{value}</dd>
               </div>
             ))}
-            <div className="bg-euro-bg/40 flex justify-between rounded-xl p-3">
-              <dt className="text-gray-500">Team</dt>
-              <dd className="text-euro-neon font-bold">{player.team.name}</dd>
-            </div>
           </dl>
-        </aside>
-
-        <div className="space-y-6 lg:col-span-8">
-          <header>
-            <h1 className="text-5xl leading-none font-black tracking-tight text-white sm:text-6xl">
-              {player.name}
-            </h1>
-            <p className="mt-2 text-sm font-bold tracking-widest text-gray-500 uppercase">
-              {player.team.name}
-              {player.jerseyNumber && ` • #${player.jerseyNumber}`}
-            </p>
-          </header>
 
           {averages ? (
-            <>
-              <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                <StatTile label="Points" value={formatStat(averages.points)} highlight />
-                <StatTile label="Rebounds" value={formatStat(averages.rebounds)} />
-                <StatTile label="Assists" value={formatStat(averages.assists)} />
-                <StatTile label="PIR" value={formatStat(averages.pir)} highlight />
-              </div>
-
-              <section className="border-euro-border bg-euro-card flex flex-col items-center space-y-6 rounded-3xl border p-6 shadow-xl">
-                <div className="flex w-full justify-between font-mono text-[10px] font-bold tracking-widest text-gray-500 uppercase">
-                  <span>Performance Radar</span>
-                  <span>{averages.games} games</span>
-                </div>
-
-                <RadarChart averages={averages} />
-
-                <div className="border-euro-border/60 grid w-full grid-cols-2 gap-3 border-t pt-6 sm:grid-cols-5">
-                  <StatTile size="sm" label="MPG" value={formatStat(averages.minutes)} />
-                  <StatTile
-                    size="sm"
-                    label="FG%"
-                    value={formatStat(averages.fieldGoalPct)}
-                    suffix="%"
-                  />
-                  <StatTile
-                    size="sm"
-                    label="3PT%"
-                    value={formatStat(averages.threePointPct)}
-                    suffix="%"
-                  />
-                  <StatTile
-                    size="sm"
-                    label="FT%"
-                    value={formatStat(averages.freeThrowPct)}
-                    suffix="%"
-                  />
-                  <StatTile size="sm" label="STL" value={formatStat(averages.steals)} />
-                </div>
-              </section>
-
-              <Suspense fallback={<PlayerFormSkeleton />}>
-                <PlayerForm code={player.code} seasonPir={averages.pir} />
-              </Suspense>
-            </>
+            <dl className="mt-auto grid grid-cols-2 gap-5 sm:grid-cols-4">
+              <StatTile label="PIR" value={formatStat(averages.pir)} accent />
+              <StatTile label="Points" value={formatStat(averages.points)} />
+              <StatTile label="Rebounds" value={formatStat(averages.rebounds)} />
+              <StatTile label="Assists" value={formatStat(averages.assists)} />
+            </dl>
           ) : (
-            <p className="border-euro-border bg-euro-card rounded-2xl border p-6 text-sm text-gray-400">
-              No games played this season yet.
+            <p className="bg-canvas text-ink-muted mt-auto rounded-md p-4 text-sm">
+              No games played this season yet. Stats appear after his first game.
             </p>
           )}
         </div>
-      </div>
+      </section>
+
+      {averages && (
+        <>
+          <section className="bg-paper ring-line grid items-center gap-8 rounded-lg p-6 ring-1 sm:p-8 lg:grid-cols-[auto_1fr]">
+            <div>
+              <h2 className="font-display text-2xl font-extrabold uppercase">
+                Season profile
+              </h2>
+              <p className="text-ink-muted text-sm">
+                Per game, {averages.games} games played
+              </p>
+              <div className="mt-2 flex justify-center">
+                <RadarChart averages={averages} />
+              </div>
+            </div>
+            <dl className="grid grid-cols-2 gap-5 sm:grid-cols-3">
+              <StatTile size="sm" label="Minutes" value={formatStat(averages.minutes)} />
+              <StatTile
+                size="sm"
+                label="Field goals"
+                value={formatStat(averages.fieldGoalPct)}
+                suffix="%"
+              />
+              <StatTile
+                size="sm"
+                label="Three pointers"
+                value={formatStat(averages.threePointPct)}
+                suffix="%"
+              />
+              <StatTile
+                size="sm"
+                label="Free throws"
+                value={formatStat(averages.freeThrowPct)}
+                suffix="%"
+              />
+              <StatTile size="sm" label="Steals" value={formatStat(averages.steals)} />
+              <StatTile size="sm" label="Blocks" value={formatStat(averages.blocks)} />
+            </dl>
+          </section>
+
+          <Suspense fallback={<PlayerFormSkeleton />}>
+            <PlayerForm code={player.code} seasonPir={averages.pir} />
+          </Suspense>
+        </>
+      )}
     </div>
   );
 }

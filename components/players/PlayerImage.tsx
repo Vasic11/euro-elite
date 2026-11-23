@@ -1,29 +1,37 @@
 import Image from "next/image";
 
+import { splitName } from "@/lib/euroleague/format";
+
 /**
  * Slika igrača preko next/image (automatski smanjuje i kešira slike).
- * Ako igrač nema sliku u API-ju, prikazujemo inicijale umesto tuđe stock fotografije.
+ * Slike iz API-ja su isečene figure sa providnom pozadinom, pa ih poravnavamo
+ * na dno ploče. Ako slike nema, prikazujemo inicijale.
  */
 export function PlayerImage({
   src,
   name,
   sizes,
   className = "",
+  priority = false,
 }: {
   src: string | null;
   name: string;
   sizes: string;
   className?: string;
+  priority?: boolean;
 }) {
   if (!src) {
-    const initials = name
-      .split(" ")
-      .map((part) => part[0])
-      .slice(0, 2)
-      .join("");
+    const { first, last } = splitName(name);
     return (
-      <div className="bg-euro-surface flex h-full w-full items-center justify-center font-mono text-4xl font-black text-gray-600">
-        {initials}
+      <div
+        className="absolute inset-0 flex items-end justify-center pb-6"
+        aria-label={name}
+        role="img"
+      >
+        <span className="font-display text-ink/15 text-6xl font-extrabold">
+          {first[0]}
+          {last[0]}
+        </span>
       </div>
     );
   }
@@ -34,7 +42,8 @@ export function PlayerImage({
       alt={name}
       fill
       sizes={sizes}
-      className={`object-cover object-top ${className}`}
+      priority={priority}
+      className={`object-contain object-bottom ${className}`}
     />
   );
 }

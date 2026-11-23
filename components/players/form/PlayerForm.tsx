@@ -20,8 +20,9 @@ export async function PlayerForm({
   } catch {
     // Ako ovaj endpoint ne radi, ne rušimo ceo profil, samo ovu sekciju.
     return (
-      <p className="border-euro-border bg-euro-card rounded-2xl border p-6 text-sm text-gray-400">
-        Game log is unavailable right now.
+      <p className="bg-paper text-ink-muted ring-line rounded-lg p-6 text-sm ring-1">
+        Game-by-game stats are unavailable right now. Season averages above are up to
+        date.
       </p>
     );
   }
@@ -33,7 +34,7 @@ export async function PlayerForm({
 export function PlayerFormSkeleton() {
   return (
     <div
-      className="border-euro-border bg-euro-card h-[560px] animate-pulse rounded-3xl border"
+      className="bg-paper ring-line h-[640px] animate-pulse rounded-lg ring-1"
       aria-label="Loading form"
     />
   );

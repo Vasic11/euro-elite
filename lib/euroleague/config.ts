@@ -13,3 +13,9 @@ export const SEASON_CODE = process.env.EUROLEAGUE_SEASON ?? "E2026";
 
 /** Koliko sekundi Next.js keš drži odgovor pre nego što ga osveži (1h). */
 export const DEFAULT_REVALIDATE_SECONDS = 60 * 60;
+
+/** "E2026" -> "2026-27", za prikaz na sajtu. */
+export const SEASON_LABEL = (() => {
+  const year = Number(SEASON_CODE.slice(1));
+  return Number.isNaN(year) ? SEASON_CODE : `${year}-${String(year + 1).slice(2)}`;
+})();

@@ -9,8 +9,8 @@ const HEIGHT = 220;
 const PAD = { top: 16, right: 12, bottom: 28, left: 32 };
 const MAX_BAR = 24;
 
-/** Sivo za starije utakmice: #6b7280 ima dovoljan kontrast na tamnoj kartici. */
-const MUTED = "#6b7280";
+/** Sivo za starije utakmice (namerno utišano); tačne vrednosti daju tooltip i tabela. */
+const MUTED = "#8a8e95";
 
 type Column = { round: number; game: GameLogEntry | null };
 
@@ -86,13 +86,13 @@ export function PirChart({
               x2={WIDTH - PAD.right}
               y1={y(t)}
               y2={y(t)}
-              stroke={t === 0 ? "#374151" : "#1e2530"}
+              stroke={t === 0 ? "#b8bbc0" : "#ececea"}
             />
             <text
               x={PAD.left - 8}
               y={y(t) + 3}
               textAnchor="end"
-              className="fill-gray-500 font-mono text-[10px]"
+              className="fill-ink-faint font-display text-[12px]"
             >
               {t}
             </text>
@@ -105,8 +105,9 @@ export function PirChart({
           x2={WIDTH - PAD.right}
           y1={y(seasonPir)}
           y2={y(seasonPir)}
-          stroke="#9ca3af"
+          stroke="#000000"
           strokeDasharray="4 4"
+          strokeOpacity={0.55}
         />
 
         {columns.map((col, i) => {
@@ -118,7 +119,7 @@ export function PirChart({
               {col.game ? (
                 <path
                   d={barPath(cx - barW / 2, barW, y(0), y(col.game.pir))}
-                  fill={inForm ? "var(--color-euro-neon)" : MUTED}
+                  fill={inForm ? "var(--color-accent)" : MUTED}
                   opacity={dim ? 0.45 : 1}
                 />
               ) : (
@@ -126,7 +127,7 @@ export function PirChart({
                   x={cx}
                   y={y(0) - 4}
                   textAnchor="middle"
-                  className="fill-gray-600 font-mono text-[8px]"
+                  className="fill-ink-faint font-display text-[10px]"
                 >
                   DNP
                 </text>
@@ -135,7 +136,7 @@ export function PirChart({
                 x={cx}
                 y={HEIGHT - 10}
                 textAnchor="middle"
-                className="fill-gray-500 font-mono text-[10px]"
+                className="fill-ink-faint font-display text-[12px]"
               >
                 {col.round}
               </text>
@@ -165,38 +166,38 @@ export function PirChart({
 
       {hoveredCol && hovered != null && (
         <div
-          className="border-euro-border bg-euro-bg/95 pointer-events-none absolute top-0 z-10 w-44 -translate-x-1/2 rounded-xl border p-3 text-xs shadow-2xl"
+          className="bg-ink pointer-events-none absolute top-0 z-10 w-48 -translate-x-1/2 rounded-md p-3 text-xs text-white shadow-xl"
           // Ograničeno na 15–85% širine da tooltip ne izađe van kartice na ivicama.
           style={{
             left: `${Math.min(85, Math.max(15, ((x(hovered) + band / 2) / WIDTH) * 100))}%`,
           }}
         >
-          <div className="font-mono text-[10px] font-bold tracking-wider text-gray-500 uppercase">
-            Round {hoveredCol.round}
-          </div>
+          <div className="text-[11px] text-white/60">Round {hoveredCol.round}</div>
           {hoveredCol.game ? (
             <>
-              <div className="mt-1 font-bold text-white">
+              <div className="font-display mt-0.5 text-base font-bold">
                 {hoveredCol.game.isHome ? "vs" : "@"} {hoveredCol.game.opponent.shortName}
               </div>
-              <div className="text-gray-400">
+              <div className="text-white/70">
                 {hoveredCol.game.won ? "W" : "L"} {hoveredCol.game.teamScore}–
                 {hoveredCol.game.opponentScore}
               </div>
-              <div className="mt-2 flex justify-between font-mono">
-                <span className="text-gray-500">PIR</span>
-                <span className="font-bold text-white">{hoveredCol.game.pir}</span>
+              <div className="mt-2 flex justify-between">
+                <span className="text-white/60">PIR</span>
+                <span className="font-display text-accent text-base font-bold">
+                  {hoveredCol.game.pir}
+                </span>
               </div>
-              <div className="flex justify-between font-mono">
-                <span className="text-gray-500">PTS / REB / AST</span>
-                <span className="text-gray-300">
+              <div className="flex justify-between">
+                <span className="text-white/60">PTS / REB / AST</span>
+                <span className="text-white">
                   {hoveredCol.game.points}/{hoveredCol.game.rebounds}/
                   {hoveredCol.game.assists}
                 </span>
               </div>
             </>
           ) : (
-            <div className="mt-1 text-gray-400">Did not play</div>
+            <div className="mt-1 text-white/70">Did not play</div>
           )}
         </div>
       )}

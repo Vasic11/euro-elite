@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 
-import { formatStat, POSITION_SHORT } from "@/lib/euroleague/format";
+import { formatStat, POSITION_LABEL } from "@/lib/euroleague/format";
 import type { Team } from "@/lib/euroleague/types";
 
 function averagePir(team: Team) {
@@ -13,71 +13,98 @@ function averagePir(team: Team) {
   return played.reduce((sum, p) => sum + (p.averages?.pir ?? 0), 0) / played.length;
 }
 
-export function TeamAccordion({ teams }: { teams: Team[] }) {
-  const [expanded, setExpanded] = useState<string | null>(null);
+/**
+ * @param initialExpanded klub koji je otvoren na početku. Dolazi iz URL-a (/teams?team=ZAL),
+ *   pa ga server zna odmah i nema treptanja posle učitavanja.
+ */
+export function TeamAccordion({
+  teams,
+  initialExpanded = null,
+}: {
+  teams: Team[];
+  initialExpanded?: string | null;
+}) {
+  const [expanded, setExpanded] = useState<string | null>(initialExpanded);
 
   return (
-    <div className="grid grid-cols-1 gap-4">
+    <div className="space-y-3">
       {teams.map((team) => {
         const isOpen = expanded === team.code;
+        const panelId = `roster-${team.code}`;
         return (
           <section
             key={team.code}
-            className="border-euro-border bg-euro-card overflow-hidden rounded-2xl border shadow-lg"
+            id={team.code}
+            className="bg-paper ring-line scroll-mt-24 overflow-hidden rounded-lg ring-1"
           >
             <button
               type="button"
               aria-expanded={isOpen}
+              aria-controls={panelId}
               onClick={() => setExpanded(isOpen ? null : team.code)}
-              className="hover:bg-euro-surface/40 flex w-full items-center justify-between gap-4 p-5 text-left transition select-none"
+              className="hover:bg-canvas/60 flex w-full items-center gap-4 p-4 text-left transition-colors sm:p-5"
             >
-              <div className="flex items-center gap-4">
-                {team.crestUrl && (
-                  <Image
-                    src={team.crestUrl}
-                    alt=""
-                    width={40}
-                    height={40}
-                    className="h-10 w-10 object-contain"
-                  />
-                )}
-                <div>
-                  <h2 className="text-xl font-black text-white">{team.name}</h2>
-                  <p className="mt-1 text-xs font-medium text-gray-500">
-                    {team.players.length} Roster Players •{" "}
-                    <span className="text-gray-400">
-                      Avg PIR: {formatStat(averagePir(team))}
-                    </span>
-                  </p>
-                </div>
+              {team.crestUrl ? (
+                <Image
+                  src={team.crestUrl}
+                  alt=""
+                  width={48}
+                  height={48}
+                  className="h-12 w-12 object-contain"
+                />
+              ) : (
+                <span className="h-12 w-12" />
+              )}
+              <div className="min-w-0 flex-1">
+                <h2 className="font-display truncate text-2xl leading-tight font-bold">
+                  {team.name}
+                </h2>
+                <p className="text-ink-muted text-sm">
+                  {team.players.length} players, average PIR{" "}
+                  {formatStat(averagePir(team))}
+                </p>
               </div>
-              <span className="text-sm font-bold text-gray-400">
-                {isOpen ? "▲" : "▼"}
-              </span>
+              <svg
+                viewBox="0 0 12 12"
+                className={`h-4 w-4 shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`}
+                aria-hidden
+              >
+                <path
+                  d="M2 4l4 4 4-4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                />
+              </svg>
             </button>
 
             {isOpen && (
-              <ul className="border-euro-border/60 bg-euro-bg/30 grid grid-cols-1 gap-4 border-t p-4 sm:grid-cols-2 md:grid-cols-3">
+              <ul
+                id={panelId}
+                className="border-line bg-line grid gap-px border-t sm:grid-cols-2 lg:grid-cols-3"
+              >
                 {team.players.map((p) => (
-                  <li key={p.code}>
+                  <li key={p.code} className="bg-paper">
                     <Link
                       href={`/players/${p.code}`}
-                      className="border-euro-border bg-euro-card hover:border-euro-neon/30 flex items-center justify-between rounded-xl border p-4 transition"
+                      className="group hover:bg-accent-soft/50 flex items-center gap-3 px-4 py-3"
                     >
-                      <div>
-                        <div className="text-sm font-bold text-white">{p.name}</div>
-                        <div className="mt-0.5 text-[10px] font-bold text-gray-500 uppercase">
-                          {p.position ? POSITION_SHORT[p.position] : "—"}
-                          {p.jerseyNumber && ` • #${p.jerseyNumber}`}
+                      <span className="font-display text-ink-faint w-8 text-2xl font-bold">
+                        {p.jerseyNumber ?? ""}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="group-hover:text-accent-ink truncate font-semibold">
+                          {p.name}
+                        </div>
+                        <div className="text-ink-muted text-xs">
+                          {p.position ? POSITION_LABEL[p.position] : "Position unknown"}
                         </div>
                       </div>
-                      <div className="text-right font-mono">
-                        <div className="text-euro-neon text-xs font-bold">
-                          {formatStat(p.averages?.points)} PPG
+                      <div className="text-right">
+                        <div className="font-display text-xl leading-none font-bold">
+                          {formatStat(p.averages?.pir)}
                         </div>
-                        <div className="text-[10px] text-gray-500">
-                          PIR {formatStat(p.averages?.pir)}
-                        </div>
+                        <div className="text-ink-faint text-xs">PIR</div>
                       </div>
                     </Link>
                   </li>

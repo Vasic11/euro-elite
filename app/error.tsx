@@ -11,16 +11,16 @@ export default function Error({
   unstable_retry: () => void;
 }) {
   return (
-    <div className="mx-auto flex max-w-md flex-col items-center gap-4 py-24 text-center">
-      <h1 className="text-xl font-black text-white">
-        Couldn&apos;t load EuroLeague data
+    <div className="mx-auto max-w-md py-24 text-center">
+      <h1 className="font-display text-4xl font-extrabold uppercase">
+        Stats didn&apos;t load
       </h1>
-      <p className="text-sm text-gray-400">
-        The EuroLeague API isn&apos;t responding right now. Try again in a moment.
+      <p className="text-ink-muted mt-3">
+        The EuroLeague data service didn&apos;t respond. This is usually temporary.
       </p>
       <button
         onClick={() => unstable_retry()}
-        className="bg-euro-neon rounded-xl px-5 py-2.5 text-xs font-black text-black uppercase hover:brightness-110"
+        className="bg-accent font-display text-ink mt-6 inline-flex h-12 items-center rounded-md px-6 text-lg font-bold hover:bg-[#ff8128]"
       >
         Try again
       </button>

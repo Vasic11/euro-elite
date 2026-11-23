@@ -1,80 +1,77 @@
 import Link from "next/link";
 
+import { ClubStrip } from "@/components/home/ClubStrip";
+import { FeaturedPlayer } from "@/components/home/FeaturedPlayer";
+import { SeasonLeaders } from "@/components/home/SeasonLeaders";
 import { PlayerGrid } from "@/components/players/PlayerGrid";
+import { SEASON_LABEL } from "@/lib/euroleague/config";
 import { getPlayers, getTeams } from "@/lib/euroleague/players";
 
-const TOP_COUNT = 8;
-
-/**
- * Početna (Scouting Hub). Serverska komponenta: nema "use client", podatke uzima
- * na serveru, a browser dobija gotov HTML, bez JSON-a od 100 KB u bundle-u.
- */
+/** Početna. Serverska komponenta: podaci se uzimaju na serveru, browser dobija gotov HTML. */
 export default async function HomePage() {
   const [players, teams] = await Promise.all([getPlayers(), getTeams()]);
-  const topPlayers = players.slice(0, TOP_COUNT); // getPlayers je već sortiran po PIR-u
+  const [featured, ...rest] = players; // getPlayers je već sortiran po PIR-u
+  const topPerformers = rest.slice(0, 8);
 
   return (
-    <div className="space-y-10">
-      <section className="border-euro-border grid grid-cols-1 items-center gap-8 border-b pb-12 md:grid-cols-12">
-        <div className="md:col-span-7">
-          <span className="text-euro-neon mb-3 block font-mono text-[10px] font-bold tracking-[0.25em]">
-            • EUROLEAGUE SCOUTING TERMINAL
-          </span>
-          <h1 className="text-7xl leading-[0.9] font-black tracking-tighter text-white">
-            EURO <br />
-            <span className="text-euro-neon">ELITE</span>
-          </h1>
-          <p className="mt-5 max-w-sm text-sm font-medium text-gray-400">
-            The definitive clean scouting platform for European basketball&apos;s premier
-            talent.
+    <div className="space-y-16">
+      <section className="grid items-center gap-8 lg:grid-cols-[1fr_1.15fr] lg:gap-12">
+        <div>
+          <p className="font-display text-accent-ink text-lg font-semibold">
+            EuroLeague {SEASON_LABEL}
           </p>
+          <h1 className="font-display mt-2 text-6xl leading-[0.88] font-extrabold uppercase sm:text-7xl xl:text-8xl">
+            Every player.
+            <br />
+            Every round.
+          </h1>
+          <p className="text-ink-muted mt-5 max-w-md text-lg">
+            Season averages, current form and league leaders for all {players.length}{" "}
+            players on {teams.length} rosters, updated after every game.
+          </p>
+          <div className="mt-7 flex flex-wrap gap-3">
+            <Link
+              href="/players"
+              className="bg-accent font-display text-ink inline-flex h-12 items-center rounded-md px-6 text-lg font-bold transition-colors hover:bg-[#ff8128]"
+            >
+              Browse players
+            </Link>
+            <Link
+              href="/teams"
+              className="border-ink/20 bg-paper font-display hover:border-ink inline-flex h-12 items-center rounded-md border px-6 text-lg font-bold transition-colors"
+            >
+              See rosters
+            </Link>
+          </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 md:col-span-5">
-          <HeroStat icon="👥" value={players.length} label="Active players" />
-          <HeroStat icon="🏟️" value={teams.length} label="Teams" />
-        </div>
+        {featured && <FeaturedPlayer player={featured} />}
       </section>
 
-      <section className="space-y-6">
-        <div className="flex items-end justify-between">
-          <h2 className="text-2xl font-black text-white">Top performers · PIR</h2>
+      <section className="space-y-5">
+        <h2 className="font-display text-3xl font-extrabold uppercase">Season leaders</h2>
+        <SeasonLeaders players={players} />
+      </section>
+
+      <section className="space-y-5">
+        <div className="flex items-end justify-between gap-4">
+          <h2 className="font-display text-3xl font-extrabold uppercase">
+            Top performers
+          </h2>
           <Link
             href="/players"
-            className="text-euro-neon text-xs font-bold tracking-wider uppercase hover:underline"
+            className="text-accent-ink text-sm font-semibold hover:underline"
           >
-            View all players ➔
+            All players
           </Link>
         </div>
-        <PlayerGrid players={topPlayers} />
+        <PlayerGrid players={topPerformers} />
       </section>
-    </div>
-  );
-}
 
-function HeroStat({
-  icon,
-  value,
-  label,
-}: {
-  icon: string;
-  value: number;
-  label: string;
-}) {
-  return (
-    <div className="border-euro-border bg-euro-card flex items-center gap-4 rounded-2xl border p-5 shadow-xl">
-      <div
-        className="bg-euro-surface flex h-11 w-11 items-center justify-center rounded-xl border border-gray-800"
-        aria-hidden
-      >
-        {icon}
-      </div>
-      <div>
-        <div className="font-mono text-2xl font-black">{value}</div>
-        <div className="mt-1 text-[10px] font-bold tracking-wider text-gray-500 uppercase">
-          {label}
-        </div>
-      </div>
+      <section className="space-y-5">
+        <h2 className="font-display text-3xl font-extrabold uppercase">Clubs</h2>
+        <ClubStrip teams={teams} />
+      </section>
     </div>
   );
 }

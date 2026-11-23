@@ -1,64 +1,84 @@
+import Image from "next/image";
 import Link from "next/link";
 
-import { formatStat, POSITION_SHORT } from "@/lib/euroleague/format";
+import { formatStat, POSITION_LABEL, splitName } from "@/lib/euroleague/format";
 import type { Player } from "@/lib/euroleague/types";
 
-import { PlayerImage } from "./PlayerImage";
+import { PlayerPanel } from "./PlayerPanel";
 
 /** Kartica igrača. Ceo blok je link ka profilu, pa radi i "otvori u novom tabu". */
-export function PlayerCard({ player }: { player: Player }) {
+export function PlayerCard({
+  player,
+  priority = false,
+}: {
+  player: Player;
+  priority?: boolean;
+}) {
   const { averages } = player;
+  const { first, last } = splitName(player.name);
 
   return (
     <Link
       href={`/players/${player.code}`}
-      className="group border-euro-border bg-euro-card hover:border-euro-neon/40 relative flex h-[340px] flex-col overflow-hidden rounded-2xl border shadow-md transition-all duration-300 hover:shadow-[0_0_30px_rgba(212,240,61,0.04)]"
+      className="group bg-paper ring-line flex h-full flex-col overflow-hidden rounded-lg shadow-[0_1px_0_rgb(0_0_0/0.06)] ring-1 transition-shadow hover:shadow-[0_8px_24px_-12px_rgb(0_0_0/0.25)]"
     >
-      <div className="border-euro-border-soft bg-euro-bg relative h-48 w-full overflow-hidden border-b">
-        <PlayerImage
-          src={player.imageUrl}
-          name={player.name}
+      <div className="relative aspect-[4/3.4]">
+        <PlayerPanel
+          player={player}
+          priority={priority}
           sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
-          className="opacity-60 transition duration-500 group-hover:scale-[1.03] group-hover:opacity-100"
         />
-        <div className="from-euro-card absolute inset-0 bg-gradient-to-t to-transparent opacity-60 transition duration-300 group-hover:opacity-20" />
-
-        {player.position && (
-          <span className="bg-euro-surface/90 text-euro-neon absolute top-3 left-3 z-10 rounded-md border border-gray-800 px-2 py-0.5 font-mono text-[9px] font-bold uppercase">
-            {POSITION_SHORT[player.position]}
+        {averages && (
+          <span className="bg-ink font-display absolute top-3 right-3 rounded px-2 py-1 text-sm leading-none font-semibold text-white">
+            PIR{" "}
+            <span className="text-accent text-lg font-bold">
+              {formatStat(averages.pir)}
+            </span>
           </span>
         )}
-        <span className="bg-euro-bg/90 absolute top-3 right-3 z-10 rounded-lg border border-gray-800 px-2 py-1 text-[11px] font-bold text-white">
-          <span className="mr-1 text-[9px] text-gray-500">PIR</span>
-          {formatStat(averages?.pir)}
-        </span>
+        {player.position && (
+          <span className="font-display text-ink absolute bottom-3 left-4 text-sm font-bold">
+            {POSITION_LABEL[player.position]}
+          </span>
+        )}
       </div>
 
-      <div className="bg-euro-card flex flex-1 flex-col justify-between p-4">
+      <div className="flex flex-1 flex-col gap-3 p-4">
         <div>
-          <h3 className="group-hover:text-euro-neon line-clamp-1 text-base font-bold text-white transition duration-200">
-            {player.name}
+          <p className="text-ink-muted text-sm leading-tight">{first}</p>
+          <h3 className="font-display group-hover:text-accent-ink text-2xl leading-tight font-extrabold uppercase">
+            {last}
           </h3>
-          <p className="mt-0.5 text-xs font-medium text-gray-500">
+          <p className="text-ink-muted mt-1.5 flex items-center gap-1.5 text-sm">
+            {player.team.crestUrl && (
+              <Image
+                src={player.team.crestUrl}
+                alt=""
+                width={18}
+                height={18}
+                className="h-[18px] w-[18px] object-contain"
+              />
+            )}
             {player.team.shortName}
-            {player.jerseyNumber && ` · #${player.jerseyNumber}`}
           </p>
         </div>
 
-        <div className="flex items-center justify-between border-t border-gray-800/60 pt-3 font-mono text-xs">
-          <span className="font-bold text-gray-400">
-            {formatStat(averages?.points)}{" "}
-            <span className="text-[9px] text-gray-600">PPG</span>
-          </span>
-          <span className="font-bold text-gray-400">
-            {formatStat(averages?.rebounds)}{" "}
-            <span className="text-[9px] text-gray-600">RPG</span>
-          </span>
-          <span className="text-euro-neon opacity-0 transition duration-300 group-hover:opacity-100">
-            ➔
-          </span>
-        </div>
+        <dl className="border-line mt-auto grid grid-cols-3 border-t pt-3">
+          <CardStat label="Pts" value={averages?.points} />
+          <CardStat label="Reb" value={averages?.rebounds} />
+          <CardStat label="Ast" value={averages?.assists} />
+        </dl>
       </div>
     </Link>
+  );
+}
+
+function CardStat({ label, value }: { label: string; value: number | undefined }) {
+  return (
+    // flex-col-reverse: u HTML-u dt (labela) ide pre dd (vrednosti), a vizuelno je vrednost gore.
+    <div className="flex flex-col-reverse">
+      <dt className="text-ink-faint mt-1 text-xs">{label}</dt>
+      <dd className="font-display text-xl leading-none font-bold">{formatStat(value)}</dd>
+    </div>
   );
 }

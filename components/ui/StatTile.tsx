@@ -1,39 +1,31 @@
-/** Kvadrat sa jednom statistikom (velika vrednost + mala labela). */
+/** Jedna statistika: velika vrednost i labela ispod. */
 export function StatTile({
   label,
   value,
   suffix,
-  highlight = false,
+  accent = false,
   size = "lg",
 }: {
   label: string;
   value: string;
   suffix?: string;
-  highlight?: boolean;
+  accent?: boolean;
   size?: "lg" | "sm";
 }) {
   const big = size === "lg";
   return (
     <div
-      className={`border-euro-border flex flex-col justify-between border ${
-        big
-          ? "bg-euro-card min-h-[105px] rounded-2xl p-5"
-          : "bg-euro-bg/60 min-h-[80px] rounded-xl p-4"
-      }`}
+      className={`flex flex-col-reverse ${big ? "border-t-2 pt-2" : "border-t pt-2"} ${accent ? "border-accent" : "border-line"}`}
     >
-      <div
-        className={`flex items-baseline font-mono leading-none font-black ${big ? "text-4xl" : "text-2xl"} ${
-          highlight ? "text-euro-neon" : "text-white"
-        }`}
+      <dt className={`${big ? "text-sm" : "text-xs"} text-ink-muted`}>{label}</dt>
+      <dd
+        className={`font-display leading-none font-bold ${big ? "text-5xl" : "text-3xl"} ${accent ? "text-accent-ink" : ""}`}
       >
         {value}
         {suffix && (
-          <span className="ml-0.5 text-sm font-normal text-gray-500">{suffix}</span>
+          <span className="text-ink-faint ml-0.5 text-lg font-semibold">{suffix}</span>
         )}
-      </div>
-      <div className="font-mono text-[10px] font-bold tracking-wider text-gray-500 uppercase">
-        {label}
-      </div>
+      </dd>
     </div>
   );
 }

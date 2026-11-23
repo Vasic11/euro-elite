@@ -13,12 +13,14 @@ import {
   type Trend,
 } from "@/lib/stats/form";
 
+import { StatTile } from "@/components/ui/StatTile";
+
 import { PirChart } from "./PirChart";
 
 const TREND_UI: Record<Trend, { label: string; icon: string; className: string }> = {
-  up: { label: "In form", icon: "▲", className: "text-euro-neon" },
-  down: { label: "Cold", icon: "▼", className: "text-red-400" },
-  steady: { label: "Steady", icon: "●", className: "text-gray-400" },
+  up: { label: "In form", icon: "▲", className: "text-[#1a7f37]" },
+  down: { label: "Cold", icon: "▼", className: "text-[#c62828]" },
+  steady: { label: "Steady", icon: "●", className: "text-ink-muted" },
 };
 
 /**
@@ -50,16 +52,19 @@ export function FormSection({
   const trend = TREND_UI[form.trend];
 
   return (
-    <section className="border-euro-border bg-euro-card space-y-6 rounded-3xl border p-6 shadow-xl">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="font-mono text-[10px] font-bold tracking-widest text-gray-500 uppercase">
-          Current Form
-        </h2>
+    <section className="bg-paper ring-line space-y-8 rounded-lg p-6 ring-1 sm:p-8">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h2 className="font-display text-2xl font-extrabold uppercase">Current form</h2>
+          <p className="text-ink-muted text-sm">
+            PIR in his last games compared with his season average
+          </p>
+        </div>
 
         <div
           role="radiogroup"
-          aria-label="Form window"
-          className="border-euro-border-soft bg-euro-bg flex gap-1 rounded-xl border p-1"
+          aria-label="Number of games"
+          className="bg-canvas flex rounded-md p-1"
         >
           {FORM_WINDOWS.map((w) => (
             <button
@@ -68,10 +73,10 @@ export function FormSection({
               role="radio"
               aria-checked={w === window}
               onClick={() => setWindow(w)}
-              className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+              className={`font-display rounded px-3.5 py-1.5 text-base font-semibold transition-colors ${
                 w === window
-                  ? "bg-euro-neon text-black"
-                  : "text-gray-400 hover:text-white"
+                  ? "bg-paper text-ink shadow-sm"
+                  : "text-ink-muted hover:text-ink"
               }`}
             >
               Last {w}
@@ -80,123 +85,120 @@ export function FormSection({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <SummaryTile
-          label={`Form PIR · last ${form.games}`}
+      <dl className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+        <StatTile
+          label={`Average PIR, last ${form.games}`}
           value={formatStat(form.formPir)}
-          highlight
+          accent
         />
-        <SummaryTile label="Season PIR" value={formatStat(seasonPir)} />
-        <div className="border-euro-border bg-euro-bg/60 flex flex-col justify-between rounded-2xl border p-5">
-          <div
-            className={`flex items-baseline gap-2 font-mono text-3xl font-black ${trend.className}`}
+        <StatTile label="Season average PIR" value={formatStat(seasonPir)} />
+        <div className="border-line flex flex-col-reverse border-t-2 pt-2">
+          <dt className="text-ink-muted text-sm">{trend.label} compared with season</dt>
+          <dd
+            className={`font-display flex items-baseline gap-2 text-5xl leading-none font-bold ${trend.className}`}
           >
-            <span className="text-lg" aria-hidden>
+            <span className="text-2xl" aria-hidden>
               {trend.icon}
             </span>
             {form.delta >= 0 ? "+" : ""}
             {formatStat(form.delta)}
-          </div>
-          <div className="font-mono text-[10px] font-bold tracking-wider text-gray-500 uppercase">
-            {trend.label} vs season
-          </div>
+          </dd>
         </div>
-      </div>
+      </dl>
 
       <div>
         <PirChart games={games} formGameCodes={formGameCodes} seasonPir={seasonPir} />
-        <p className="mt-2 flex items-center gap-2 text-[11px] text-gray-500">
-          <span
-            className="bg-euro-neon inline-block h-2.5 w-2.5 rounded-sm"
-            aria-hidden
-          />{" "}
-          In form window
-          <span
-            className="ml-3 inline-block h-2.5 w-2.5 rounded-sm bg-[#6b7280]"
-            aria-hidden
-          />{" "}
-          Earlier games
-          <span
-            className="ml-3 inline-block w-4 border-t border-dashed border-gray-400"
-            aria-hidden
-          />{" "}
-          Season avg {formatStat(seasonPir)}
+        <p className="text-ink-muted mt-3 flex flex-wrap items-center gap-x-5 gap-y-1 text-sm">
+          <span className="flex items-center gap-2">
+            <span className="bg-accent h-3 w-3 rounded-sm" aria-hidden /> Last {window}{" "}
+            games
+          </span>
+          <span className="flex items-center gap-2">
+            <span className="h-3 w-3 rounded-sm bg-[#8a8e95]" aria-hidden /> Earlier games
+          </span>
+          <span className="flex items-center gap-2">
+            <span className="border-ink/60 w-4 border-t border-dashed" aria-hidden />{" "}
+            Season average {formatStat(seasonPir)}
+          </span>
         </p>
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[520px] text-left text-xs">
-          <thead className="font-mono text-[10px] tracking-wider text-gray-500 uppercase">
-            <tr className="border-euro-border border-b">
-              <th className="py-2 font-bold">Rd</th>
-              <th className="py-2 font-bold">Opponent</th>
-              <th className="py-2 font-bold">Result</th>
-              <th className="py-2 text-right font-bold">MIN</th>
-              <th className="py-2 text-right font-bold">PTS</th>
-              <th className="py-2 text-right font-bold">REB</th>
-              <th className="py-2 text-right font-bold">AST</th>
-              <th className="py-2 text-right font-bold">PIR</th>
+        <table className="w-full min-w-[560px] text-left text-sm">
+          <caption className="sr-only">Last {window} games</caption>
+          <thead className="text-ink-muted text-xs">
+            <tr className="border-line border-b">
+              <th scope="col" className="py-2 font-semibold">
+                Round
+              </th>
+              <th scope="col" className="py-2 font-semibold">
+                Opponent
+              </th>
+              <th scope="col" className="py-2 font-semibold">
+                Result
+              </th>
+              <th scope="col" className="py-2 text-right font-semibold">
+                Min
+              </th>
+              <th scope="col" className="py-2 text-right font-semibold">
+                Pts
+              </th>
+              <th scope="col" className="py-2 text-right font-semibold">
+                Reb
+              </th>
+              <th scope="col" className="py-2 text-right font-semibold">
+                Ast
+              </th>
+              <th scope="col" className="py-2 text-right font-semibold">
+                PIR
+              </th>
             </tr>
           </thead>
-          <tbody className="font-mono">
+          <tbody>
             {recent.toReversed().map((g) => (
-              <tr key={g.gameCode} className="border-euro-border/50 border-b">
-                <td className="py-2.5 text-gray-500">{g.round}</td>
-                <td className="py-2.5">
-                  <span className="flex items-center gap-2 font-sans font-bold text-white">
-                    <span className="w-4 text-gray-500">{g.isHome ? "vs" : "@"}</span>
+              <tr key={g.gameCode} className="border-line border-b last:border-0">
+                <td className="font-display text-ink-faint py-3 text-base font-semibold">
+                  {g.round}
+                </td>
+                <td className="py-3">
+                  <span className="flex items-center gap-2 font-semibold">
+                    <span className="text-ink-faint w-5 text-xs font-normal">
+                      {g.isHome ? "vs" : "at"}
+                    </span>
                     {g.opponent.crestUrl && (
                       <Image
                         src={g.opponent.crestUrl}
                         alt=""
-                        width={18}
-                        height={18}
-                        className="h-[18px] w-[18px] object-contain"
+                        width={22}
+                        height={22}
+                        className="h-[22px] w-[22px] object-contain"
                       />
                     )}
                     {g.opponent.shortName}
                   </span>
                 </td>
-                <td
-                  className={`py-2.5 font-bold ${g.won ? "text-euro-neon" : "text-gray-400"}`}
-                >
-                  {g.won ? "W" : "L"} {g.teamScore}–{g.opponentScore}
+                <td className="py-3">
+                  <span
+                    className={`mr-1.5 inline-block w-5 rounded-sm text-center text-xs font-bold ${g.won ? "bg-[#1a7f37] text-white" : "bg-canvas text-ink-muted"}`}
+                  >
+                    {g.won ? "W" : "L"}
+                  </span>
+                  {g.teamScore}–{g.opponentScore}
                 </td>
-                <td className="py-2.5 text-right text-gray-400">
+                <td className="text-ink-muted py-3 text-right">
                   {Math.round(g.minutes)}
                 </td>
-                <td className="py-2.5 text-right text-gray-300">{g.points}</td>
-                <td className="py-2.5 text-right text-gray-300">{g.rebounds}</td>
-                <td className="py-2.5 text-right text-gray-300">{g.assists}</td>
-                <td className="py-2.5 text-right font-bold text-white">{g.pir}</td>
+                <td className="py-3 text-right">{g.points}</td>
+                <td className="py-3 text-right">{g.rebounds}</td>
+                <td className="py-3 text-right">{g.assists}</td>
+                <td className="font-display py-3 text-right text-lg font-bold">
+                  {g.pir}
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
     </section>
-  );
-}
-
-function SummaryTile({
-  label,
-  value,
-  highlight = false,
-}: {
-  label: string;
-  value: string;
-  highlight?: boolean;
-}) {
-  return (
-    <div className="border-euro-border bg-euro-bg/60 flex flex-col justify-between rounded-2xl border p-5">
-      <div
-        className={`font-mono text-3xl font-black ${highlight ? "text-euro-neon" : "text-white"}`}
-      >
-        {value}
-      </div>
-      <div className="font-mono text-[10px] font-bold tracking-wider text-gray-500 uppercase">
-        {label}
-      </div>
-    </div>
   );
 }

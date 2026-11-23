@@ -11,17 +11,17 @@ import { PlayerGrid } from "./PlayerGrid";
 type SortKey = "pir" | "points" | "rebounds" | "assists";
 
 const POSITION_OPTIONS: { value: Position | "all"; label: string }[] = [
-  { value: "all", label: "All Positions" },
+  { value: "all", label: "All" },
   { value: "Guard", label: "Guards" },
   { value: "Forward", label: "Forwards" },
   { value: "Center", label: "Centers" },
 ];
 
 const SORT_OPTIONS: { value: SortKey; label: string }[] = [
-  { value: "pir", label: "Sort: PIR" },
-  { value: "points", label: "Sort: Points" },
-  { value: "rebounds", label: "Sort: Rebounds" },
-  { value: "assists", label: "Sort: Assists" },
+  { value: "pir", label: "PIR" },
+  { value: "points", label: "Points" },
+  { value: "rebounds", label: "Rebounds" },
+  { value: "assists", label: "Assists" },
 ];
 
 /**
@@ -41,7 +41,7 @@ export function PlayerExplorer({ players }: { players: Player[] }) {
   const nationOptions = useMemo(() => {
     const countries = new Set(players.flatMap((p) => (p.country ? [p.country] : [])));
     return [
-      { value: "all", label: "All Nations" },
+      { value: "all", label: "All" },
       ...[...countries].sort().map((c) => ({ value: c, label: c })),
     ];
   }, [players]);
@@ -61,19 +61,31 @@ export function PlayerExplorer({ players }: { players: Player[] }) {
   }, [players, deferredQuery, position, nation, sort]);
 
   return (
-    <div className="space-y-6">
-      <div className="border-euro-border bg-euro-card flex flex-col justify-between gap-3 rounded-2xl border p-3 shadow-lg md:flex-row md:items-center">
-        <label className="border-euro-border-soft bg-euro-bg flex flex-1 items-center gap-2 rounded-xl border px-4 py-2.5">
-          <span className="text-sm text-gray-500" aria-hidden>
-            🔍
-          </span>
+    <div className="space-y-5">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center">
+        <label className="border-line bg-paper focus-within:border-ink/40 flex h-11 flex-1 items-center gap-2.5 rounded-md border px-3.5">
+          <svg
+            viewBox="0 0 16 16"
+            className="text-ink-faint h-4 w-4 shrink-0"
+            aria-hidden
+          >
+            <circle
+              cx="7"
+              cy="7"
+              r="5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.6"
+            />
+            <path d="M11 11l3.5 3.5" stroke="currentColor" strokeWidth="1.6" />
+          </svg>
           <input
             type="search"
-            placeholder="Search player name, team..."
+            placeholder="Search by player or team"
             aria-label="Search players"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="w-full border-none bg-transparent text-xs font-medium text-white placeholder-gray-600 outline-none"
+            className="placeholder:text-ink-faint w-full bg-transparent text-sm outline-none"
           />
         </label>
 
@@ -100,16 +112,19 @@ export function PlayerExplorer({ players }: { players: Player[] }) {
         </div>
       </div>
 
-      <p className="text-xs font-bold tracking-wider text-gray-500 uppercase">
+      <p className="text-ink-muted text-sm" aria-live="polite">
         {visible.length} {visible.length === 1 ? "player" : "players"}
       </p>
 
       {visible.length > 0 ? (
-        <PlayerGrid players={visible} />
+        <PlayerGrid players={visible} priorityCount={4} />
       ) : (
-        <p className="py-16 text-center text-sm text-gray-500">
-          No players match these filters.
-        </p>
+        <div className="border-line bg-paper rounded-lg border border-dashed py-16 text-center">
+          <p className="font-display text-xl font-bold">No players match these filters</p>
+          <p className="text-ink-muted mt-1 text-sm">
+            Try a different name or clear a filter.
+          </p>
+        </div>
       )}
     </div>
   );

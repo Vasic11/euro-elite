@@ -53,7 +53,7 @@ export function RadarChart({ averages }: { averages: SeasonAverages }) {
         <polygon
           key={r}
           points={polygon(AXES.map(() => r))}
-          className={i === 3 ? "stroke-gray-700/60" : "stroke-gray-800/40"}
+          className={i === 3 ? "stroke-ink/25" : "stroke-ink/10"}
         />
       ))}
 
@@ -66,7 +66,7 @@ export function RadarChart({ averages }: { averages: SeasonAverages }) {
             y1={CENTER}
             x2={end.x}
             y2={end.y}
-            className="stroke-gray-800/40"
+            className="stroke-ink/10"
           />
         );
       })}
@@ -77,7 +77,7 @@ export function RadarChart({ averages }: { averages: SeasonAverages }) {
         transition={{ type: "spring", stiffness: 45, damping: 15, delay: 0.1 }}
         style={{ transformOrigin: "center", transformBox: "fill-box" }}
         points={polygon(radii)}
-        className="fill-euro-neon/10 stroke-euro-neon stroke-[2.5]"
+        className="fill-accent/20 stroke-accent stroke-[2.5]"
       />
 
       {/* Labele: pozicija se računa iz ugla, pa ostaju poravnate ako dodamo osu. */}
@@ -90,7 +90,7 @@ export function RadarChart({ averages }: { averages: SeasonAverages }) {
             x={x}
             y={y + 4}
             textAnchor={anchor}
-            className="fill-slate-400 font-mono text-[11px] font-bold tracking-wider"
+            className="fill-ink-muted font-display text-[13px] font-semibold"
           >
             {axis.label}
           </text>
