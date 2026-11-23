@@ -56,6 +56,8 @@ export const personEntrySchema = z.object({
 
 export const peopleResponseSchema = z.object({
   data: z.array(personEntrySchema),
+  /** Koliko zapisa ukupno postoji. Ako je data kraći od ovoga, API je vratio samo jednu stranicu. */
+  total: z.number(),
 });
 
 /** Jedan red iz /v3/.../statistics/players/traditional (prosek po utakmici). */

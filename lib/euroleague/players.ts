@@ -61,6 +61,19 @@ function toPlayer(entry: PersonEntry, stats: PlayerStats | undefined): Player {
   };
 }
 
+/**
+ * Zaštita od tihog gubitka podataka: ako API vrati manje zapisa nego što sam
+ * kaže da postoji, upisujemo grešku u log servera. Ne bacamo izuzetak, jer je
+ * bolje prikazati sajt sa skoro svim igračima nego srušiti ceo sajt.
+ */
+function warnIfIncomplete(what: string, received: number, total: number) {
+  if (received < total) {
+    console.error(
+      `EuroLeague API returned ${received} of ${total} ${what} (paginated response)`,
+    );
+  }
+}
+
 const seasonPath = `/competitions/${COMPETITION_CODE}/seasons/${SEASON_CODE}`;
 
 /**
@@ -73,7 +86,12 @@ const seasonPath = `/competitions/${COMPETITION_CODE}/seasons/${SEASON_CODE}`;
 export const getPlayers = cache(async (): Promise<Player[]> => {
   // Dva zahteva su nezavisna, pa ih šaljemo paralelno.
   const [people, stats] = await Promise.all([
-    euroleagueFetch(`/v2${seasonPath}/people`, peopleResponseSchema),
+    // personType=J: samo igrači. Bez filtera API vraća i trenere, lekare i ostalo
+    // osoblje (~1000 zapisa), a pošto vraća samo jednu stranicu, deo igrača bi ostao
+    // van nje (zbog toga je Tubelis falio).
+    euroleagueFetch(`/v2${seasonPath}/people`, peopleResponseSchema, {
+      query: { personType: "J", limit: 1000 },
+    }),
     euroleagueFetch(
       `/v3/competitions/${COMPETITION_CODE}/statistics/players/traditional`,
       playerStatsResponseSchema,
@@ -87,6 +105,9 @@ export const getPlayers = cache(async (): Promise<Player[]> => {
       },
     ),
   ]);
+
+  warnIfIncomplete("people", people.data.length, people.total);
+  warnIfIncomplete("player stats", stats.players.length, stats.total);
 
   // Map po kodu igrača: O(1) pretraga umesto prolaska kroz ceo niz za svakog igrača.
   const statsByCode = new Map(stats.players.map((s) => [s.player.code, s]));
