@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
 import { PlayerForm, PlayerFormSkeleton } from "@/components/players/form/PlayerForm";
+import { MissedGameBadge } from "@/components/players/MissedGameBadge";
 import { PlayerPanel } from "@/components/players/PlayerPanel";
 import { RadarChart } from "@/components/players/RadarChart";
 import { StatTile } from "@/components/ui/StatTile";
@@ -62,6 +63,7 @@ export default async function PlayerPage({ params }: Props) {
 
         <div className="flex flex-col gap-8 p-6 sm:p-8">
           <div>
+            {player.missedLastGame && <MissedGameBadge className="mb-3" />}
             <p className="text-2xl leading-tight text-ink-muted">{first}</p>
             <h1 className="font-display text-6xl leading-[0.88] font-extrabold uppercase sm:text-7xl">
               {last}
@@ -76,7 +78,12 @@ export default async function PlayerPage({ params }: Props) {
                   className="h-7 w-7 object-contain"
                 />
               )}
-              {player.team.name}
+              <Link
+                href={`/teams/${player.team.code.toLowerCase()}`}
+                className="hover:text-accent-ink hover:underline"
+              >
+                {player.team.name}
+              </Link>
               {player.jerseyNumber && (
                 <span className="font-normal text-ink-muted">#{player.jerseyNumber}</span>
               )}

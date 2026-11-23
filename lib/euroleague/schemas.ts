@@ -54,69 +54,45 @@ export const personEntrySchema = z.object({
   club: clubSchema,
 });
 
-export const peopleResponseSchema = z.object({
-  data: z.array(personEntrySchema),
-  /** Koliko zapisa ukupno postoji. Ako je data kraći od ovoga, API je vratio samo jednu stranicu. */
-  total: z.number(),
-});
-
-/** Jedan red iz /v3/.../statistics/players/traditional (prosek po utakmici). */
-export const playerStatsSchema = z.object({
-  player: z.object({
-    code: z.string(),
-    name: z.string(),
-    imageUrl: z.string().nullish(),
-    // Kod igrača koji su menjali klub u toku sezone, ovo polje sadrži oba kluba
-    // ("BAS;PAR"). Zato tim uzimamo iz rostera, a ne odavde.
-    team: z.object({
-      code: z.string(),
-      name: z.string(),
-    }),
-  }),
-  gamesPlayed: z.number(),
-  minutesPlayed: z.number(),
-  pointsScored: z.number(),
-  twoPointersMade: z.number(),
-  twoPointersAttempted: z.number(),
-  threePointersMade: z.number(),
-  threePointersAttempted: z.number(),
-  freeThrowsMade: z.number(),
-  freeThrowsAttempted: z.number(),
-  totalRebounds: z.number(),
-  assists: z.number(),
-  steals: z.number(),
-  blocks: z.number(),
-  turnovers: z.number(),
-  pir: z.number(),
-});
-
-export const playerStatsResponseSchema = z.object({
-  total: z.number(),
-  players: z.array(playerStatsSchema),
-});
-
 export const clubsResponseSchema = z.object({
   data: z.array(clubSchema),
 });
 
 export type Club = z.infer<typeof clubSchema>;
 export type PersonEntry = z.infer<typeof personEntrySchema>;
-export type PlayerStats = z.infer<typeof playerStatsSchema>;
 
-/** Jedna utakmica iz /v2/.../people/{code}/stats. PIR se u API-ju zove `valuation`. */
-export const playerGameSchema = z.object({
-  game: z.object({
-    gameCode: z.number(),
-    round: z.number(),
-    utcDate: z.string(),
-    local: z.object({ club: clubSchema, score: z.number() }),
-    road: z.object({ club: clubSchema, score: z.number() }),
-  }),
+/** /v2/.../clubs/{code}/people vraća niz (bez omotača "data"). */
+export const clubPeopleResponseSchema = z.array(personEntrySchema);
+
+const scheduleSideSchema = z.object({ club: clubSchema, score: z.number() });
+
+/** Jedna utakmica iz /v2/.../games (raspored i rezultati). */
+export const scheduleGameSchema = z.object({
+  gameCode: z.number(),
+  round: z.number(),
+  played: z.boolean(),
+  utcDate: z.string(),
+  local: scheduleSideSchema,
+  road: scheduleSideSchema,
+});
+
+export const scheduleResponseSchema = z.object({
+  data: z.array(scheduleGameSchema),
+});
+
+/** Jedan igrač u box score-u (/v3/.../games/{code}/stats). PIR = valuation. */
+const boxScorePlayerSchema = z.object({
+  player: z.object({ person: z.object({ code: z.string() }) }),
   stats: z.object({
-    /** sekunde na terenu */
     timePlayed: z.number(),
     valuation: z.number(),
     points: z.number(),
+    fieldGoalsMade2: z.number(),
+    fieldGoalsAttempted2: z.number(),
+    fieldGoalsMade3: z.number(),
+    fieldGoalsAttempted3: z.number(),
+    freeThrowsMade: z.number(),
+    freeThrowsAttempted: z.number(),
     totalRebounds: z.number(),
     assistances: z.number(),
     steals: z.number(),
@@ -124,12 +100,12 @@ export const playerGameSchema = z.object({
     turnovers: z.number(),
     startFive: z.boolean().nullish(),
   }),
-  /** Klub za koji je igrač igrao TU utakmicu (bitno posle transfera). */
-  playerClubCode: z.string(),
 });
 
-export const playerGamesResponseSchema = z.object({
-  games: z.array(playerGameSchema),
+export const boxScoreResponseSchema = z.object({
+  local: z.object({ players: z.array(boxScorePlayerSchema) }),
+  road: z.object({ players: z.array(boxScorePlayerSchema) }),
 });
 
-export type PlayerGame = z.infer<typeof playerGameSchema>;
+export type ScheduleGameDto = z.infer<typeof scheduleGameSchema>;
+export type BoxScoreDto = z.infer<typeof boxScoreResponseSchema>;

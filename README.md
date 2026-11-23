@@ -28,7 +28,8 @@ app/                          rute (svaki folder = URL)
   page.tsx                    /                 Scouting Hub
   players/page.tsx            /players          svi igrači + filteri
   players/[code]/page.tsx     /players/:code    profil igrača
-  teams/page.tsx              /teams            timovi
+  teams/page.tsx              /teams            svi klubovi
+  teams/[code]/page.tsx       /teams/zal        klub: trener, učinak, igrači po pozicijama
   loading.tsx, error.tsx, not-found.tsx
 
 components/
@@ -84,3 +85,10 @@ Zvanični EuroLeague API (`api-live.euroleague.net`). Odgovori se keširaju 1h, 
 ## Forma
 
 Prosek PIR-a u poslednjih N odigranih utakmica (podrazumevano 5) poredi se sa prosekom sezone. Igrač je **In form** ili **Cold** kad je razlika najmanje 15% proseka, a ne manje od 1.5 PIR. Utakmice na kojima nije ulazio u igru se ne računaju.
+
+## Odakle dolaze brojke
+
+- **Roster i treneri** se uzimaju klub po klub. Endpoint za celu sezonu vraća samo jednu stranicu rezultata i preskače igrače.
+- **Proseci i forma** se računaju iz box score-a svake odigrane utakmice (`lib/stats/aggregate.ts`). Endpoint sa gotovim prosecima izostavlja neke igrače koji su igrali.
+- **„Missed last game“**: igrač iz rostera koji nije bio u sastavu od 12 igrača na poslednjoj utakmici svog tima. API ne kaže razlog (povreda, bolest, odluka trenera), pa ne pišemo „povređen“.
+- **Boje klubova** API ne vraća; ručno su upisane u `lib/euroleague/clubColors.ts`.

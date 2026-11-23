@@ -31,6 +31,7 @@ function player(code: string, games: number, points: number): Player {
     imageUrl: null,
     team: { code: "T", name: "T", shortName: "T", crestUrl: null },
     averages,
+    missedLastGame: false,
   };
 }
 

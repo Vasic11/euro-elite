@@ -1,28 +1,30 @@
 import type { Metadata } from "next";
 
-import { TeamAccordion } from "@/components/teams/TeamAccordion";
+import { TeamCard } from "@/components/teams/TeamCard";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { getTeams } from "@/lib/euroleague/players";
 
 export const metadata: Metadata = {
   title: "Teams",
-  description: "EuroLeague rosters with per-player averages.",
+  description: "All EuroLeague clubs with their head coach, record and roster.",
 };
 
-type Props = { searchParams: Promise<{ team?: string | string[] }> };
-
-export default async function TeamsPage({ searchParams }: Props) {
-  const [teams, { team }] = await Promise.all([getTeams(), searchParams]);
-  const initialExpanded =
-    typeof team === "string" && teams.some((t) => t.code === team) ? team : null;
+export default async function TeamsPage() {
+  const teams = await getTeams();
 
   return (
     <div>
       <PageHeader
         title="Teams"
-        description="Open a club to see its roster and how each player is doing this season."
+        description="Pick a club to see its head coach and full roster by position."
       />
-      <TeamAccordion teams={teams} initialExpanded={initialExpanded} />
+      <ul className="grid grid-cols-1 gap-4 min-[420px]:grid-cols-2 lg:grid-cols-4 lg:gap-5">
+        {teams.map((team) => (
+          <li key={team.code}>
+            <TeamCard team={team} />
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

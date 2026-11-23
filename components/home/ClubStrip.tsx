@@ -6,7 +6,7 @@ import type { Team } from "@/lib/euroleague/types";
 
 /**
  * Grbovi svih klubova. Podrazumevano su sivi i utišani, a na hover (ili fokus)
- * dobiju boju, podignu se i dobiju ivicu u boji kluba. Klik otvara roster na /teams.
+ * dobiju boju, podignu se i dobiju ivicu u boji kluba. Klik otvara stranicu kluba.
  */
 export function ClubStrip({ teams }: { teams: Team[] }) {
   return (
@@ -14,7 +14,7 @@ export function ClubStrip({ teams }: { teams: Team[] }) {
       {teams.map((team) => (
         <li key={team.code}>
           <Link
-            href={`/teams?team=${team.code}#${team.code}`}
+            href={`/teams/${team.code.toLowerCase()}`}
             title={team.name}
             style={{ "--club": clubColor(team.code) } as React.CSSProperties}
             className="group flex aspect-square items-center justify-center rounded-lg bg-paper p-3 ring-1 ring-line transition-[transform,box-shadow] duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_14px_28px_-16px_rgb(0_0_0/0.4)] hover:ring-2 hover:ring-[var(--club)] focus-visible:-translate-y-1"

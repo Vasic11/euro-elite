@@ -44,10 +44,24 @@ export type Player = {
   team: TeamSummary;
   /** null ako igrač još nije igrao ove sezone. */
   averages: SeasonAverages | null;
+  /**
+   * true ako igrač nije bio u sastavu (12 igrača) na poslednjoj utakmici svog tima.
+   * API ne kaže razlog: može biti povreda, bolest ili odluka trenera.
+   */
+  missedLastGame: boolean;
+};
+
+export type Coach = {
+  code: string;
+  name: string;
+  imageUrl: string | null;
 };
 
 export type Team = TeamSummary & {
   players: Player[];
+  coach: Coach | null;
+  wins: number;
+  losses: number;
 };
 
 /** Jedna odigrana utakmica igrača, iz ugla njegovog tima. */

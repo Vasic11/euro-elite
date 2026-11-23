@@ -4,6 +4,7 @@ import Link from "next/link";
 import { formatStat, POSITION_LABEL, splitName } from "@/lib/euroleague/format";
 import type { Player } from "@/lib/euroleague/types";
 
+import { MissedGameBadge } from "./MissedGameBadge";
 import { PlayerPanel } from "./PlayerPanel";
 
 /** Kartica igrača. Ceo blok je link ka profilu, pa radi i "otvori u novom tabu". */
@@ -36,6 +37,7 @@ export function PlayerCard({
             </span>
           </span>
         )}
+        {player.missedLastGame && <MissedGameBadge className="absolute top-3 left-3" />}
         {player.position && (
           <span className="absolute bottom-3 left-3 rounded bg-paper/90 px-2 py-0.5 font-display text-sm font-bold text-ink">
             {POSITION_LABEL[player.position]}
