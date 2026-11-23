@@ -95,7 +95,7 @@ export default async function TeamPage({ params }: Props) {
                 {players.length}
               </span>
             </h2>
-            <PlayerGrid players={players} />
+            <PlayerGrid players={players} from={`/teams/${team.code.toLowerCase()}`} />
           </section>
         );
       })}

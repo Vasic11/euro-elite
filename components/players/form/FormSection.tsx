@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import { formatStat } from "@/lib/euroleague/format";
@@ -47,6 +48,9 @@ export function FormSection({
   );
   const recent = useMemo(() => games.slice(-window), [games, window]);
   const formGameCodes = useMemo(() => new Set(recent.map((g) => g.gameCode)), [recent]);
+  // Tabela podrazumevano pokazuje samo utakmice iz forme; na klik celu sezonu.
+  const [showAll, setShowAll] = useState(false);
+  const rows = (showAll ? games : recent).toReversed();
 
   if (!form) return null;
   const trend = TREND_UI[form.trend];
@@ -125,10 +129,12 @@ export function FormSection({
 
       <div className="overflow-x-auto">
         <table className="w-full min-w-[560px] text-left text-sm">
-          <caption className="sr-only">Last {window} games</caption>
+          <caption className="sr-only">
+            {showAll ? "All games this season" : `Last ${window} games`}
+          </caption>
           <thead className="text-xs text-ink-muted">
             <tr className="border-b border-line">
-              <th scope="col" className="py-2 font-semibold">
+              <th scope="col" className="py-2 pl-3 font-semibold">
                 Round
               </th>
               <th scope="col" className="py-2 font-semibold">
@@ -155,13 +161,24 @@ export function FormSection({
             </tr>
           </thead>
           <tbody>
-            {recent.toReversed().map((g) => (
-              <tr key={g.gameCode} className="border-b border-line last:border-0">
-                <td className="py-3 font-display text-base font-semibold text-ink-faint">
+            {rows.map((g) => (
+              <tr
+                key={g.gameCode}
+                // Kad je prikazana cela sezona, utakmice iz forme imaju narandžastu liniju sa leve strane.
+                className={`border-b border-line last:border-0 ${
+                  showAll && formGameCodes.has(g.gameCode)
+                    ? "shadow-[inset_3px_0_0_var(--color-accent)]"
+                    : ""
+                }`}
+              >
+                <td className="py-3 pl-3 font-display text-base font-semibold text-ink-faint">
                   {g.round}
                 </td>
                 <td className="py-3">
-                  <span className="flex items-center gap-2 font-semibold">
+                  <Link
+                    href={`/teams/${g.opponent.code.toLowerCase()}`}
+                    className="group/opp inline-flex items-center gap-2 font-semibold hover:text-accent-ink"
+                  >
                     <span className="w-5 text-xs font-normal text-ink-faint">
                       {g.isHome ? "vs" : "at"}
                     </span>
@@ -174,8 +191,10 @@ export function FormSection({
                         className="h-[22px] w-[22px] object-contain"
                       />
                     )}
-                    {g.opponent.shortName}
-                  </span>
+                    <span className="group-hover/opp:underline">
+                      {g.opponent.shortName}
+                    </span>
+                  </Link>
                 </td>
                 <td className="py-3">
                   <span
@@ -199,6 +218,26 @@ export function FormSection({
           </tbody>
         </table>
       </div>
+
+      {games.length > recent.length && (
+        <button
+          type="button"
+          onClick={() => setShowAll((v) => !v)}
+          aria-expanded={showAll}
+          className="mx-auto flex h-11 items-center gap-2 rounded-full bg-canvas px-5 font-display text-lg font-bold transition-colors hover:bg-ink hover:text-white"
+        >
+          {showAll
+            ? `Show last ${window} games`
+            : `Show all ${games.length} games this season`}
+          <svg
+            viewBox="0 0 12 12"
+            className={`h-3 w-3 transition-transform ${showAll ? "rotate-180" : ""}`}
+            aria-hidden
+          >
+            <path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.8" />
+          </svg>
+        </button>
+      )}
     </section>
   );
 }

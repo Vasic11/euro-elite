@@ -11,9 +11,30 @@ import { RadarChart } from "@/components/players/RadarChart";
 import { StatTile } from "@/components/ui/StatTile";
 import { BackLink } from "@/components/ui/BackLink";
 import { ageFrom, formatStat, POSITION_LABEL, splitName } from "@/lib/euroleague/format";
-import { getPlayer } from "@/lib/euroleague/players";
+import { getPlayer, getTeam } from "@/lib/euroleague/players";
 
-type Props = { params: Promise<{ code: string }> };
+type Props = {
+  params: Promise<{ code: string }>;
+  searchParams: Promise<{ from?: string | string[] }>;
+};
+
+/**
+ * Dugme za povratak vodi tamo odakle je korisnik došao (?from=/teams/zal).
+ * Prihvatamo samo naše poznate putanje, nikad spoljni URL (inače bi neko mogao
+ * da napravi link koji vodi na tuđi sajt).
+ */
+async function backTarget(
+  from: string | string[] | undefined,
+): Promise<{ href: string; label: string }> {
+  if (from === "/") return { href: "/", label: "Home" };
+  const teamCode =
+    typeof from === "string" ? from.match(/^\/teams\/([a-z]+)$/)?.[1] : undefined;
+  if (teamCode) {
+    const team = await getTeam(teamCode);
+    if (team) return { href: `/teams/${teamCode}`, label: `Back to ${team.shortName}` };
+  }
+  return { href: "/players", label: "All players" };
+}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const player = await getPlayer((await params).code);
@@ -26,9 +47,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 /** Profil igrača: /players/[code]. */
-export default async function PlayerPage({ params }: Props) {
-  const { code } = await params;
-  const player = await getPlayer(code);
+export default async function PlayerPage({ params, searchParams }: Props) {
+  const [{ code }, { from }] = await Promise.all([params, searchParams]);
+  const [player, back] = await Promise.all([getPlayer(code), backTarget(from)]);
   if (!player) notFound(); // prikazuje app/not-found.tsx
 
   const { averages } = player;
@@ -45,7 +66,7 @@ export default async function PlayerPage({ params }: Props) {
 
   return (
     <div className="space-y-6">
-      <BackLink href="/players" label="All players" />
+      <BackLink href={back.href} label={back.label} />
 
       <section className="grid overflow-hidden rounded-lg bg-paper ring-1 ring-line md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
         <div className="relative aspect-square md:aspect-auto md:min-h-[460px]">

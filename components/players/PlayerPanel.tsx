@@ -77,7 +77,7 @@ export function PlayerPanel({
       )}
 
       {/* Prostor iznad glave: slika počinje malo ispod vrha ploče */}
-      <div className={`absolute inset-x-0 bottom-0 ${hero ? "top-[6%]" : "top-[9%]"}`}>
+      <div className={`absolute inset-x-0 bottom-0 ${hero ? "top-[4%]" : "top-[5%]"}`}>
         <PlayerImage
           src={player.imageUrl}
           name={player.name}

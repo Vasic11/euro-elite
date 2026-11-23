@@ -1,14 +1,18 @@
 "use client";
 
+import { MotionConfig } from "framer-motion";
 import { useDeferredValue, useMemo, useState } from "react";
 
 import { normalizeForSearch } from "@/lib/euroleague/format";
 import type { Player, Position } from "@/lib/euroleague/types";
 import { Dropdown } from "@/components/ui/Dropdown";
 
-import { PlayerGrid } from "./PlayerGrid";
+import { AnimatedPlayerGrid } from "./AnimatedPlayerGrid";
 
 type SortKey = "pir" | "points" | "rebounds" | "assists";
+
+/** Koliko kartica prikazujemo odjednom; "Show more" dodaje još toliko. */
+const PAGE_SIZE = 24;
 
 const POSITION_OPTIONS: { value: Position | "all"; label: string }[] = [
   { value: "all", label: "All" },
@@ -59,6 +63,13 @@ export function PlayerExplorer({ players }: { players: Player[] }) {
       )
       .toSorted((a, b) => (b.averages?.[sort] ?? -1) - (a.averages?.[sort] ?? -1));
   }, [players, deferredQuery, position, nation, sort]);
+
+  // Broj prikazanih kartica se vraća na PAGE_SIZE čim se promeni filter.
+  // Umesto useEffect-a pamtimo za koji filter važi limit (nema dodatnog renderovanja).
+  const filterKey = `${deferredQuery}|${position}|${nation}|${sort}`;
+  const [paging, setPaging] = useState({ key: filterKey, limit: PAGE_SIZE });
+  const limit = paging.key === filterKey ? paging.limit : PAGE_SIZE;
+  const shown = visible.slice(0, limit);
 
   return (
     <div className="space-y-5">
@@ -117,7 +128,23 @@ export function PlayerExplorer({ players }: { players: Player[] }) {
       </p>
 
       {visible.length > 0 ? (
-        <PlayerGrid players={visible} priorityCount={4} />
+        <>
+          <MotionConfig reducedMotion="user">
+            <AnimatedPlayerGrid players={shown} from="/players" />
+          </MotionConfig>
+          {visible.length > shown.length && (
+            <button
+              type="button"
+              onClick={() => setPaging({ key: filterKey, limit: limit + PAGE_SIZE })}
+              className="mx-auto flex h-12 items-center gap-2 rounded-full bg-paper px-6 font-display text-lg font-bold ring-1 ring-line transition-colors hover:bg-ink hover:text-white hover:ring-ink"
+            >
+              Show more
+              <span className="font-semibold text-ink-faint">
+                {shown.length} of {visible.length}
+              </span>
+            </button>
+          )}
+        </>
       ) : (
         <div className="rounded-lg border border-dashed border-line bg-paper py-16 text-center">
           <p className="font-display text-xl font-bold">No players match these filters</p>

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { formatStat } from "@/lib/euroleague/format";
 import type { Player } from "@/lib/euroleague/types";
 import { LEADER_CATEGORIES, leadersFor } from "@/lib/stats/leaders";
+import { playerHref } from "@/components/players/PlayerCard";
 
 /** Top 3 u svakoj kategoriji. Rang je stvarni redosled, pa ima smisla da bude numerisan. */
 export function SeasonLeaders({ players }: { players: Player[] }) {
@@ -21,7 +22,7 @@ export function SeasonLeaders({ players }: { players: Player[] }) {
               {leaders.map((p, i) => (
                 <li key={p.code}>
                   <Link
-                    href={`/players/${p.code}`}
+                    href={playerHref(p.code, "/")}
                     className="group flex items-center gap-3 py-2.5"
                   >
                     <span

@@ -7,21 +7,28 @@ import type { Player } from "@/lib/euroleague/types";
 import { MissedGameBadge } from "./MissedGameBadge";
 import { PlayerPanel } from "./PlayerPanel";
 
+/** Link ka profilu; `from` je stranica sa koje se dolazi, da dugme za povratak vodi tamo. */
+export function playerHref(code: string, from?: string) {
+  return from ? `/players/${code}?from=${encodeURIComponent(from)}` : `/players/${code}`;
+}
+
 /** Kartica igrača. Ceo blok je link ka profilu, pa radi i "otvori u novom tabu". */
 export function PlayerCard({
   player,
   priority = false,
+  from,
 }: {
   player: Player;
   priority?: boolean;
+  from?: string;
 }) {
   const { averages } = player;
   const { first, last } = splitName(player.name);
 
   return (
     <Link
-      href={`/players/${player.code}`}
-      className="group flex h-full flex-col overflow-hidden rounded-lg bg-paper shadow-[0_1px_0_rgb(0_0_0/0.06)] ring-1 ring-line transition-shadow hover:shadow-[0_8px_24px_-12px_rgb(0_0_0/0.25)]"
+      href={playerHref(player.code, from)}
+      className="group flex h-full flex-col overflow-hidden rounded-lg bg-paper ring-1 ring-line transition-[transform,box-shadow] duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_18px_36px_-18px_rgb(0_0_0/0.35)] hover:ring-accent focus-visible:-translate-y-1"
     >
       <div className="relative aspect-[4/3.4]">
         <PlayerPanel

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { formatStat, splitName } from "@/lib/euroleague/format";
 import type { Player } from "@/lib/euroleague/types";
 import { PlayerPanel } from "@/components/players/PlayerPanel";
+import { playerHref } from "@/components/players/PlayerCard";
 
 /** Najbolji igrač po PIR-u, velika kartica u hero delu početne. */
 export function FeaturedPlayer({ player }: { player: Player }) {
@@ -11,7 +12,7 @@ export function FeaturedPlayer({ player }: { player: Player }) {
 
   return (
     <Link
-      href={`/players/${player.code}`}
+      href={playerHref(player.code, "/")}
       className="group grid overflow-hidden rounded-lg bg-paper ring-1 ring-line transition-shadow duration-300 hover:shadow-[0_24px_48px_-24px_rgb(0_0_0/0.4)] hover:ring-accent sm:grid-cols-[1.1fr_1fr] lg:grid-cols-1 xl:grid-cols-[1.1fr_1fr]"
     >
       <div className="relative aspect-square sm:aspect-auto sm:min-h-[340px] lg:aspect-[4/3] xl:aspect-auto">

@@ -4,8 +4,10 @@ import { splitName } from "@/lib/euroleague/format";
 
 /**
  * Slika igrača preko next/image (automatski smanjuje i kešira slike).
- * Slike iz API-ja su isečene figure sa providnom pozadinom, pa ih poravnavamo
- * na dno ploče. Ako slike nema, prikazujemo inicijale.
+ * Slike iz API-ja su isečene figure sa providnom pozadinom, ali sa različito
+ * mnogo praznog prostora na dnu. Zato sliku popunjavamo od vrha (object-cover,
+ * object-top): igrač uvek dodiruje dno ploče, a višak se odseca ispod kadra.
+ * Ako slike nema, prikazujemo inicijale.
  */
 export function PlayerImage({
   src,
@@ -43,7 +45,7 @@ export function PlayerImage({
       fill
       sizes={sizes}
       priority={priority}
-      className={`object-contain object-bottom ${className}`}
+      className={`object-cover object-top ${className}`}
     />
   );
 }

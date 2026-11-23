@@ -65,7 +65,7 @@ export default async function HomePage() {
             All players
           </Link>
         </div>
-        <PlayerGrid players={topPerformers} />
+        <PlayerGrid players={topPerformers} from="/" />
       </section>
 
       <section className="space-y-5">
