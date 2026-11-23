@@ -175,3 +175,39 @@ export function teamRecord(
   }
   return { wins, losses };
 }
+
+/**
+ * Igrači koji su "propustili poslednju utakmicu" na način koji nešto znači:
+ * nisu bili u sastavu (12 igrača) na poslednjoj utakmici tima, a bili su u sastavu
+ * na bar polovini utakmica tima. Bez ovog drugog uslova bi svaki igrač sa kraja
+ * klupe (rosteri imaju 17-19 igrača, sastav 12) bio označen.
+ */
+export function playersWhoMissedLastGame(
+  games: ScheduledGame[],
+  boxes: GameBox[],
+): Set<string> {
+  const squads = lastGameSquads(games, boxes);
+
+  // Koliko utakmica (sa box score-om) je svaki tim odigrao i koliko puta je igrač bio u sastavu.
+  const teamGames = new Map<string, number>();
+  const appearances = new Map<string, { team: string; count: number }>();
+  for (const box of boxes) {
+    const teamsInGame = new Set(box.lines.map((l) => l.teamCode));
+    for (const team of teamsInGame) teamGames.set(team, (teamGames.get(team) ?? 0) + 1);
+    for (const line of box.lines) {
+      const key = `${line.teamCode}:${line.playerCode}`;
+      const current = appearances.get(key) ?? { team: line.teamCode, count: 0 };
+      current.count++;
+      appearances.set(key, current);
+    }
+  }
+
+  const missed = new Set<string>();
+  for (const [key, { team, count }] of appearances) {
+    const playerCode = key.slice(team.length + 1);
+    const squad = squads.get(team);
+    const regular = count >= Math.ceil((teamGames.get(team) ?? 0) / 2);
+    if (squad && regular && !squad.has(playerCode)) missed.add(playerCode);
+  }
+  return missed;
+}

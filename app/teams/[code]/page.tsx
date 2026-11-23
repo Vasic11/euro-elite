@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { PlayerGrid } from "@/components/players/PlayerGrid";
+import { BackLink } from "@/components/ui/BackLink";
 import { clubColor } from "@/lib/euroleague/clubColors";
 import { formatStat, splitName } from "@/lib/euroleague/format";
 import { getTeam } from "@/lib/euroleague/players";
@@ -44,12 +44,7 @@ export default async function TeamPage({ params }: Props) {
   return (
     <div className="space-y-12">
       <div className="space-y-6">
-        <Link
-          href="/teams"
-          className="inline-flex items-center gap-1.5 text-sm font-semibold text-ink-muted hover:text-ink"
-        >
-          <span aria-hidden>←</span> All teams
-        </Link>
+        <BackLink href="/teams" label="All teams" />
 
         <section className="grid overflow-hidden rounded-lg bg-paper ring-1 ring-line sm:grid-cols-[260px_1fr]">
           {/* Leva kolona: grb na boji kluba, zakošena desna ivica kao na karticama igrača */}
@@ -113,7 +108,7 @@ function CoachBlock({ name, imageUrl }: { name: string; imageUrl: string | null 
   return (
     <div className="flex items-center gap-3">
       <div className="relative h-14 w-14 overflow-hidden rounded-full bg-panel ring-2 ring-paper">
-        {imageUrl && (
+        {imageUrl ? (
           <Image
             src={imageUrl}
             alt=""
@@ -121,6 +116,11 @@ function CoachBlock({ name, imageUrl }: { name: string; imageUrl: string | null 
             sizes="56px"
             className="object-cover object-top"
           />
+        ) : (
+          <span className="flex h-full w-full items-center justify-center font-display text-xl font-bold text-ink-muted">
+            {first[0]}
+            {last[0]}
+          </span>
         )}
       </div>
       <div>

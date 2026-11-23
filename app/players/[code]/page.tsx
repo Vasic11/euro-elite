@@ -9,6 +9,7 @@ import { MissedGameBadge } from "@/components/players/MissedGameBadge";
 import { PlayerPanel } from "@/components/players/PlayerPanel";
 import { RadarChart } from "@/components/players/RadarChart";
 import { StatTile } from "@/components/ui/StatTile";
+import { BackLink } from "@/components/ui/BackLink";
 import { ageFrom, formatStat, POSITION_LABEL, splitName } from "@/lib/euroleague/format";
 import { getPlayer } from "@/lib/euroleague/players";
 
@@ -44,12 +45,7 @@ export default async function PlayerPage({ params }: Props) {
 
   return (
     <div className="space-y-6">
-      <Link
-        href="/players"
-        className="inline-flex items-center gap-1.5 text-sm font-semibold text-ink-muted hover:text-ink"
-      >
-        <span aria-hidden>←</span> All players
-      </Link>
+      <BackLink href="/players" label="All players" />
 
       <section className="grid overflow-hidden rounded-lg bg-paper ring-1 ring-line md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
         <div className="relative aspect-square md:aspect-auto md:min-h-[460px]">

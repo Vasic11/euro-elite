@@ -4,7 +4,7 @@
  * Ključ je kod kluba iz API-ja (/v2/.../clubs).
  */
 const CLUB_COLORS: Record<string, string> = {
-  ASV: "#0a7a3e", // LDLC ASVEL
+  ASV: "#3d434c", // LDLC ASVEL (grafit, kao njihov crno-sivi grb)
   BAR: "#a50044", // FC Barcelona
   BAS: "#213a70", // Baskonia
   BES: "#1a1a1a", // Besiktas

@@ -8,6 +8,7 @@ import {
   gameLogFor,
   type GameBox,
   lastGameSquads,
+  playersWhoMissedLastGame,
   type ScheduledGame,
   teamRecord,
 } from "./aggregate";
@@ -125,5 +126,32 @@ describe("teamRecord", () => {
       game(3, 3, "OLY", "RED", 60, 70),
     ];
     expect(teamRecord("RED", games)).toEqual({ wins: 2, losses: 1 });
+  });
+});
+
+describe("playersWhoMissedLastGame", () => {
+  const games = [
+    game(1, 1, "RED", "ZAL", 80, 70),
+    game(2, 2, "PAR", "RED", 75, 85),
+    game(3, 3, "RED", "OLY", 90, 80),
+  ];
+
+  it("označava stalnog člana sastava koji nije bio na poslednjoj utakmici", () => {
+    const boxes: GameBox[] = [
+      { gameCode: 1, lines: [line("starter", "RED"), line("hurt", "RED")] },
+      { gameCode: 2, lines: [line("starter", "RED"), line("hurt", "RED")] },
+      { gameCode: 3, lines: [line("starter", "RED")] },
+    ];
+    expect([...playersWhoMissedLastGame(games, boxes)]).toEqual(["hurt"]);
+  });
+
+  it("ne označava igrača sa kraja klupe koji je retko u sastavu", () => {
+    // "bench" je bio u sastavu 1 od 3 utakmice (< polovine), pa ne dobija oznaku
+    const boxes: GameBox[] = [
+      { gameCode: 1, lines: [line("starter", "RED"), line("bench", "RED")] },
+      { gameCode: 2, lines: [line("starter", "RED")] },
+      { gameCode: 3, lines: [line("starter", "RED")] },
+    ];
+    expect(playersWhoMissedLastGame(games, boxes).size).toBe(0);
   });
 });

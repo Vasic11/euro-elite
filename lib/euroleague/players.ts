@@ -4,7 +4,7 @@ import { cache } from "react";
 
 import {
   averagesFromLines,
-  lastGameSquads,
+  playersWhoMissedLastGame,
   linesByPlayer,
   teamRecord,
 } from "@/lib/stats/aggregate";
@@ -79,11 +79,10 @@ export const getPlayers = cache(async (): Promise<Player[]> => {
   ]);
 
   const lines = linesByPlayer(boxes);
-  const squads = lastGameSquads(schedule, boxes);
+  const missed = playersWhoMissedLastGame(schedule, boxes);
 
   return latestActive(entries, "J")
     .map((entry): Player => {
-      const squad = squads.get(entry.club.code);
       return {
         code: entry.person.code,
         name: formatPersonName(entry.person.name),
@@ -96,8 +95,7 @@ export const getPlayers = cache(async (): Promise<Player[]> => {
         imageUrl: entry.images?.headshot ?? null,
         team: toTeamSummary(entry.club),
         averages: averagesFromLines(lines.get(entry.person.code) ?? []),
-        // Ako tim još nije igrao, nemamo sa čim da poredimo.
-        missedLastGame: squad ? !squad.has(entry.person.code) : false,
+        missedLastGame: missed.has(entry.person.code),
       };
     })
     .sort((a, b) => (b.averages?.pir ?? -1) - (a.averages?.pir ?? -1));

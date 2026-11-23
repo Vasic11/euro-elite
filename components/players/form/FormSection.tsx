@@ -179,7 +179,7 @@ export function FormSection({
                 </td>
                 <td className="py-3">
                   <span
-                    className={`mr-1.5 inline-block w-5 rounded-sm text-center text-xs font-bold ${g.won ? "bg-[#1a7f37] text-white" : "bg-canvas text-ink-muted"}`}
+                    className={`mr-1.5 inline-block w-5 rounded-sm text-center text-xs font-bold ${g.won ? "bg-[#1a7f37] text-white" : "bg-[#c62828] text-white"}`}
                   >
                     {g.won ? "W" : "L"}
                   </span>

@@ -6,11 +6,12 @@ import type { Player } from "@/lib/euroleague/types";
 import { PlayerImage } from "./PlayerImage";
 
 /**
- * Foto-ploča: igrač ispred kose trake u boji svog kluba, sa velikim izbledelim grbom.
+ * Foto-ploča: igrač na pozadini u boji svog kluba, sa izbledelim grbom.
+ * Ništa ne prolazi kroz igrača; kose linije (ugao parketa) su samo u donjem levom uglu.
  * Koriste je kartice, početna i profil, pa izgled ostaje isti svuda.
  *
  * Hover efekat radi preko "group" klase na roditelju (kartici):
- * traka se širi, grb postaje vidljiviji, igrač se blago uvećava.
+ * linije klize, grb postaje vidljiviji, igrač se blago uvećava.
  */
 export function PlayerPanel({
   player,
@@ -24,20 +25,20 @@ export function PlayerPanel({
   priority?: boolean;
 }) {
   const hero = size === "hero";
-  const color = clubColor(player.team.code);
 
   return (
-    <div className="relative h-full w-full overflow-hidden bg-panel">
-      {/* Kosa traka u boji kluba. clip-path sa istim brojem tačaka može da se animira. */}
+    <div
+      className="relative h-full w-full overflow-hidden"
+      style={{ backgroundColor: clubColor(player.team.code) }}
+    >
+      {/* Svetlo iz gornjeg desnog ugla i senka pri dnu, da boja ne bude ravna */}
       <div
         aria-hidden
-        className="absolute inset-0 transition-[clip-path] duration-500 ease-out [clip-path:polygon(0_0,58%_0,34%_100%,0_100%)] group-hover:[clip-path:polygon(0_0,72%_0,48%_100%,0_100%)]"
-        style={{ backgroundColor: color }}
+        className="absolute inset-0 bg-[radial-gradient(120%_90%_at_90%_0%,rgb(255_255_255/0.3),transparent_60%)]"
       />
-      {/* Tanka narandžasta linija uz ivicu trake: veza sa bojom sajta */}
       <div
         aria-hidden
-        className="absolute inset-0 bg-accent transition-[clip-path] duration-500 ease-out [clip-path:polygon(58%_0,61%_0,37%_100%,34%_100%)] group-hover:[clip-path:polygon(72%_0,75%_0,51%_100%,48%_100%)]"
+        className="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black/30 to-transparent"
       />
 
       {player.team.crestUrl && (
@@ -46,7 +47,7 @@ export function PlayerPanel({
           alt=""
           width={hero ? 640 : 320}
           height={hero ? 640 : 320}
-          className={`pointer-events-none absolute object-contain opacity-[0.18] transition-opacity duration-500 group-hover:opacity-30 ${
+          className={`pointer-events-none absolute object-contain opacity-20 transition-opacity duration-500 group-hover:opacity-35 ${
             hero
               ? "-top-8 -right-12 h-[380px] w-[380px]"
               : "-top-4 -right-8 h-[180px] w-[180px]"
@@ -54,25 +55,37 @@ export function PlayerPanel({
         />
       )}
 
+      {/* Kose linije u uglu: narandžasta (boja sajta) i bela */}
+      <div
+        aria-hidden
+        className="absolute -bottom-3 left-6 flex [transform:skewX(-24deg)] gap-2 transition-transform duration-500 ease-out group-hover:[transform:skewX(-24deg)_translateX(14px)]"
+      >
+        <span className={`block bg-accent ${hero ? "h-56 w-5" : "h-32 w-3"}`} />
+        <span className={`block bg-white/50 ${hero ? "h-56 w-2" : "h-32 w-1.5"}`} />
+      </div>
+
       {player.jerseyNumber && (
         <span
           aria-hidden
           className={`absolute right-4 bottom-2 font-display leading-none font-extrabold text-transparent ${
             hero ? "text-[8rem]" : "text-6xl"
           }`}
-          style={{ WebkitTextStroke: "1.5px rgb(0 0 0 / 0.14)" }}
+          style={{ WebkitTextStroke: "1.5px rgb(255 255 255 / 0.35)" }}
         >
           {player.jerseyNumber}
         </span>
       )}
 
-      <PlayerImage
-        src={player.imageUrl}
-        name={player.name}
-        sizes={sizes}
-        priority={priority}
-        className="drop-shadow-[0_8px_16px_rgb(0_0_0/0.18)] transition-transform duration-500 ease-out group-hover:scale-[1.05]"
-      />
+      {/* Prostor iznad glave: slika počinje malo ispod vrha ploče */}
+      <div className={`absolute inset-x-0 bottom-0 ${hero ? "top-[6%]" : "top-[9%]"}`}>
+        <PlayerImage
+          src={player.imageUrl}
+          name={player.name}
+          sizes={sizes}
+          priority={priority}
+          className="drop-shadow-[0_10px_18px_rgb(0_0_0/0.3)] transition-transform duration-500 ease-out group-hover:scale-[1.04]"
+        />
+      </div>
     </div>
   );
 }

@@ -45,8 +45,9 @@ export type Player = {
   /** null ako igrač još nije igrao ove sezone. */
   averages: SeasonAverages | null;
   /**
-   * true ako igrač nije bio u sastavu (12 igrača) na poslednjoj utakmici svog tima.
-   * API ne kaže razlog: može biti povreda, bolest ili odluka trenera.
+   * true ako je igrač stalni član sastava (bio na bar pola utakmica), a nije bio u
+   * sastavu na poslednjoj utakmici svog tima. API ne kaže razlog: povreda, bolest
+   * ili odluka trenera.
    */
   missedLastGame: boolean;
 };
