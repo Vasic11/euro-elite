@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 
+import { PlayerForm, PlayerFormSkeleton } from "@/components/players/form/PlayerForm";
 import { PlayerImage } from "@/components/players/PlayerImage";
 import { RadarChart } from "@/components/players/RadarChart";
 import { StatTile } from "@/components/ui/StatTile";
@@ -130,6 +132,10 @@ export default async function PlayerPage({ params }: Props) {
                   <StatTile size="sm" label="STL" value={formatStat(averages.steals)} />
                 </div>
               </section>
+
+              <Suspense fallback={<PlayerFormSkeleton />}>
+                <PlayerForm code={player.code} seasonPir={averages.pir} />
+              </Suspense>
             </>
           ) : (
             <p className="border-euro-border bg-euro-card rounded-2xl border p-6 text-sm text-gray-400">

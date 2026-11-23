@@ -100,3 +100,34 @@ export const clubsResponseSchema = z.object({
 export type Club = z.infer<typeof clubSchema>;
 export type PersonEntry = z.infer<typeof personEntrySchema>;
 export type PlayerStats = z.infer<typeof playerStatsSchema>;
+
+/** Jedna utakmica iz /v2/.../people/{code}/stats. PIR se u API-ju zove `valuation`. */
+export const playerGameSchema = z.object({
+  game: z.object({
+    gameCode: z.number(),
+    round: z.number(),
+    utcDate: z.string(),
+    local: z.object({ club: clubSchema, score: z.number() }),
+    road: z.object({ club: clubSchema, score: z.number() }),
+  }),
+  stats: z.object({
+    /** sekunde na terenu */
+    timePlayed: z.number(),
+    valuation: z.number(),
+    points: z.number(),
+    totalRebounds: z.number(),
+    assistances: z.number(),
+    steals: z.number(),
+    blocksFavour: z.number(),
+    turnovers: z.number(),
+    startFive: z.boolean().nullish(),
+  }),
+  /** Klub za koji je igrač igrao TU utakmicu (bitno posle transfera). */
+  playerClubCode: z.string(),
+});
+
+export const playerGamesResponseSchema = z.object({
+  games: z.array(playerGameSchema),
+});
+
+export type PlayerGame = z.infer<typeof playerGameSchema>;

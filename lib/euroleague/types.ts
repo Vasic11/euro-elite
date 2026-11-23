@@ -49,3 +49,24 @@ export type Player = {
 export type Team = TeamSummary & {
   players: Player[];
 };
+
+/** Jedna odigrana utakmica igrača, iz ugla njegovog tima. */
+export type GameLogEntry = {
+  gameCode: number;
+  round: number;
+  date: string;
+  opponent: TeamSummary;
+  isHome: boolean;
+  teamScore: number;
+  opponentScore: number;
+  won: boolean;
+  started: boolean;
+  minutes: number;
+  points: number;
+  rebounds: number;
+  assists: number;
+  steals: number;
+  blocks: number;
+  turnovers: number;
+  pir: number;
+};

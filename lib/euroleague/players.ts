@@ -5,6 +5,7 @@ import { cache } from "react";
 import { euroleagueFetch } from "./client";
 import { COMPETITION_CODE, SEASON_CODE } from "./config";
 import { formatPersonName } from "./format";
+import { toTeamSummary } from "./mappers";
 import {
   peopleResponseSchema,
   playerStatsResponseSchema,
@@ -55,13 +56,7 @@ function toPlayer(entry: PersonEntry, stats: PlayerStats | undefined): Player {
     weightKg: entry.person.weight || null,
     birthDate: entry.person.birthDate ?? null,
     imageUrl: entry.images?.headshot ?? stats?.player.imageUrl ?? null,
-    team: {
-      code: entry.club.code,
-      name: entry.club.name,
-      shortName:
-        entry.club.editorialName ?? entry.club.abbreviatedName ?? entry.club.name,
-      crestUrl: entry.club.images?.crest ?? null,
-    },
+    team: toTeamSummary(entry.club),
     averages: stats ? toAverages(stats) : null,
   };
 }

@@ -40,10 +40,17 @@ export function ageFrom(birthDate: string | null): number | null {
   return age;
 }
 
-/** Uklanja kvačice i velika slova, da "petrusev" nađe "Petrušev". */
+/**
+ * Priprema tekst za pretragu: mala slova, bez kvačica.
+ * "đ" nije slovo sa kvačicom u Unicode-u (NFD ga ne razlaže), pa ga menjamo ručno.
+ * Ljudi ga kucaju kao "dj" ili "d", pa oba svodimo na "d". Pošto se isto pravilo
+ * primenjuje i na ime i na upit, "djordjevic", "dordevic" i "Đorđević" se poklapaju.
+ */
 export function normalizeForSearch(text: string): string {
   return text
+    .toLowerCase()
     .normalize("NFD")
     .replace(/\p{Diacritic}/gu, "")
-    .toLowerCase();
+    .replace(/đ/g, "d")
+    .replace(/dj/g, "d");
 }

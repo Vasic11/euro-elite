@@ -19,6 +19,7 @@ npm run dev
 | `npm run lint`      | ESLint                |
 | `npm run typecheck` | TypeScript provera    |
 | `npm run format`    | Prettier formatiranje |
+| `npm test`          | Vitest testovi        |
 
 ## Struktura
 
@@ -33,6 +34,7 @@ app/                          rute (svaki folder = URL)
 components/
   layout/Navbar.tsx           navigacija (aktivni tab prema URL-u)
   players/                    PlayerCard, PlayerGrid, PlayerExplorer, RadarChart, PlayerImage
+  players/form/               forma: PlayerForm (server), FormSection, PirChart
   teams/TeamAccordion.tsx
   ui/                         opšte komponente: Dropdown, StatTile
 
@@ -42,6 +44,10 @@ lib/euroleague/               sve što zna za EuroLeague API
   schemas.ts                  Zod šeme: oblik odgovora API-ja
   types.ts                    naši tipovi: Player, Team, SeasonAverages
   players.ts                  getPlayers(), getPlayer(), getTeams()
+  games.ts                    getPlayerGameLog(): utakmice igrača
+  mappers.ts                  klub iz API-ja -> TeamSummary
+
+lib/stats/form.ts             forma (čiste funkcije, pokrivene testovima)
   format.ts                   formatiranje imena, brojeva, godina
 ```
 
@@ -68,6 +74,10 @@ Zvanični EuroLeague API (`api-live.euroleague.net`). Odgovori se keširaju 1h, 
 
 - [x] Živi podaci iz zvaničnog API-ja
 - [x] Prave rute: hub, igrači, profil, timovi
-- [ ] Forma: PIR po kolima i poslednjih 5 utakmica
+- [x] Forma: PIR po kolima, prozor 3/5/10, poređenje sa sezonom
 - [ ] Baza + noćna sinhronizacija (istorija, transferi)
 - [ ] Fantasy: optimalan tim za zadati budžet
+
+## Forma
+
+Prosek PIR-a u poslednjih N odigranih utakmica (podrazumevano 5) poredi se sa prosekom sezone. Igrač je **In form** ili **Cold** kad je razlika najmanje 15% proseka, a ne manje od 1.5 PIR. Utakmice na kojima nije ulazio u igru se ne računaju.
