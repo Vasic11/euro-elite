@@ -1,14 +1,30 @@
 @import "tailwindcss";
 
+/*
+ * Dizajn tokeni: sve boje aplikacije na jednom mestu.
+ * Tailwind od svake --color-* promenljive pravi klase: bg-euro-card, border-euro-border, text-euro-neon...
+ * Ako hoćeš da promeniš boju, menjaš je samo ovde.
+ */
 @theme {
-  --color-euroBackground: #0b0f14;
-  --color-euroNeon: #d4f03d;
-  --color-euroCard: #13181f;
-  --color-euroBorder: #1e2530;
+  --color-euro-bg: #090d12;
+  --color-euro-card: #11161e;
+  --color-euro-surface: #1a222f;
+  --color-euro-border: #1e2530;
+  --color-euro-border-soft: #1c232e;
+  --color-euro-neon: #d4f03d;
+}
+
+:root {
+  color-scheme: dark;
 }
 
 body {
-  background-color: var(--color-euroBackground);
+  background-color: var(--color-euro-bg);
   color: white;
   font-family: Arial, Helvetica, sans-serif;
+}
+
+::selection {
+  background-color: var(--color-euro-neon);
+  color: black;
 }
