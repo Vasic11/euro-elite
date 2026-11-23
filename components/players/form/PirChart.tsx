@@ -166,7 +166,7 @@ export function PirChart({
 
       {hoveredCol && hovered != null && (
         <div
-          className="bg-ink pointer-events-none absolute top-0 z-10 w-48 -translate-x-1/2 rounded-md p-3 text-xs text-white shadow-xl"
+          className="pointer-events-none absolute top-0 z-10 w-48 -translate-x-1/2 rounded-md bg-ink p-3 text-xs text-white shadow-xl"
           // Ograničeno na 15–85% širine da tooltip ne izađe van kartice na ivicama.
           style={{
             left: `${Math.min(85, Math.max(15, ((x(hovered) + band / 2) / WIDTH) * 100))}%`,
@@ -175,7 +175,7 @@ export function PirChart({
           <div className="text-[11px] text-white/60">Round {hoveredCol.round}</div>
           {hoveredCol.game ? (
             <>
-              <div className="font-display mt-0.5 text-base font-bold">
+              <div className="mt-0.5 font-display text-base font-bold">
                 {hoveredCol.game.isHome ? "vs" : "@"} {hoveredCol.game.opponent.shortName}
               </div>
               <div className="text-white/70">
@@ -184,7 +184,7 @@ export function PirChart({
               </div>
               <div className="mt-2 flex justify-between">
                 <span className="text-white/60">PIR</span>
-                <span className="font-display text-accent text-base font-bold">
+                <span className="font-display text-base font-bold text-accent">
                   {hoveredCol.game.pir}
                 </span>
               </div>

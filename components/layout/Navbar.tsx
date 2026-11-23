@@ -20,7 +20,7 @@ export function Navbar() {
   const pathname = usePathname();
 
   return (
-    <header className="border-line bg-paper/90 sticky top-0 z-50 border-b backdrop-blur-md">
+    <header className="sticky top-0 z-50 border-b border-line bg-paper/90 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-8">
         <Link href="/" className="flex items-center gap-2.5" aria-label="EuroElite home">
           <Logo />
@@ -37,7 +37,7 @@ export function Navbar() {
                 key={item.href}
                 href={item.href}
                 aria-current={active ? "page" : undefined}
-                className={`font-display relative flex items-center px-2 text-lg font-semibold transition-colors sm:px-3 ${
+                className={`relative flex items-center px-2 font-display text-lg font-semibold transition-colors sm:px-3 ${
                   active ? "text-ink" : "text-ink-muted hover:text-ink"
                 }`}
               >
@@ -45,7 +45,7 @@ export function Navbar() {
                 {active && (
                   <motion.span
                     layoutId="activeNavIndicator"
-                    className="bg-accent absolute inset-x-2 bottom-0 h-[3px] rounded-t-full sm:inset-x-3"
+                    className="absolute inset-x-2 bottom-0 h-[3px] rounded-t-full bg-accent sm:inset-x-3"
                     transition={{ type: "spring", stiffness: 500, damping: 40 }}
                   />
                 )}

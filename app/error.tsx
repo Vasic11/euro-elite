@@ -15,12 +15,12 @@ export default function Error({
       <h1 className="font-display text-4xl font-extrabold uppercase">
         Stats didn&apos;t load
       </h1>
-      <p className="text-ink-muted mt-3">
+      <p className="mt-3 text-ink-muted">
         The EuroLeague data service didn&apos;t respond. This is usually temporary.
       </p>
       <button
         onClick={() => unstable_retry()}
-        className="bg-accent font-display text-ink mt-6 inline-flex h-12 items-center rounded-md px-6 text-lg font-bold hover:bg-[#ff8128]"
+        className="mt-6 inline-flex h-12 items-center rounded-md bg-accent px-6 font-display text-lg font-bold text-ink hover:bg-[#ff8128]"
       >
         Try again
       </button>

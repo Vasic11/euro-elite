@@ -63,10 +63,10 @@ export function PlayerExplorer({ players }: { players: Player[] }) {
   return (
     <div className="space-y-5">
       <div className="flex flex-col gap-3 md:flex-row md:items-center">
-        <label className="border-line bg-paper focus-within:border-ink/40 flex h-11 flex-1 items-center gap-2.5 rounded-md border px-3.5">
+        <label className="flex h-11 flex-1 items-center gap-2.5 rounded-md border border-line bg-paper px-3.5 focus-within:border-ink/40">
           <svg
             viewBox="0 0 16 16"
-            className="text-ink-faint h-4 w-4 shrink-0"
+            className="h-4 w-4 shrink-0 text-ink-faint"
             aria-hidden
           >
             <circle
@@ -85,7 +85,7 @@ export function PlayerExplorer({ players }: { players: Player[] }) {
             aria-label="Search players"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="placeholder:text-ink-faint w-full bg-transparent text-sm outline-none"
+            className="w-full bg-transparent text-sm outline-none placeholder:text-ink-faint"
           />
         </label>
 
@@ -112,16 +112,16 @@ export function PlayerExplorer({ players }: { players: Player[] }) {
         </div>
       </div>
 
-      <p className="text-ink-muted text-sm" aria-live="polite">
+      <p className="text-sm text-ink-muted" aria-live="polite">
         {visible.length} {visible.length === 1 ? "player" : "players"}
       </p>
 
       {visible.length > 0 ? (
         <PlayerGrid players={visible} priorityCount={4} />
       ) : (
-        <div className="border-line bg-paper rounded-lg border border-dashed py-16 text-center">
+        <div className="rounded-lg border border-dashed border-line bg-paper py-16 text-center">
           <p className="font-display text-xl font-bold">No players match these filters</p>
-          <p className="text-ink-muted mt-1 text-sm">
+          <p className="mt-1 text-sm text-ink-muted">
             Try a different name or clear a filter.
           </p>
         </div>

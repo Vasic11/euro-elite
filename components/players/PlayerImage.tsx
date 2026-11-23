@@ -28,7 +28,7 @@ export function PlayerImage({
         aria-label={name}
         role="img"
       >
-        <span className="font-display text-ink/15 text-6xl font-extrabold">
+        <span className="font-display text-6xl font-extrabold text-ink/15">
           {first[0]}
           {last[0]}
         </span>

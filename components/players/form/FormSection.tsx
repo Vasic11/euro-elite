@@ -52,11 +52,11 @@ export function FormSection({
   const trend = TREND_UI[form.trend];
 
   return (
-    <section className="bg-paper ring-line space-y-8 rounded-lg p-6 ring-1 sm:p-8">
+    <section className="space-y-8 rounded-lg bg-paper p-6 ring-1 ring-line sm:p-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h2 className="font-display text-2xl font-extrabold uppercase">Current form</h2>
-          <p className="text-ink-muted text-sm">
+          <p className="text-sm text-ink-muted">
             PIR in his last games compared with his season average
           </p>
         </div>
@@ -64,7 +64,7 @@ export function FormSection({
         <div
           role="radiogroup"
           aria-label="Number of games"
-          className="bg-canvas flex rounded-md p-1"
+          className="flex rounded-md bg-canvas p-1"
         >
           {FORM_WINDOWS.map((w) => (
             <button
@@ -73,7 +73,7 @@ export function FormSection({
               role="radio"
               aria-checked={w === window}
               onClick={() => setWindow(w)}
-              className={`font-display rounded px-3.5 py-1.5 text-base font-semibold transition-colors ${
+              className={`rounded px-3.5 py-1.5 font-display text-base font-semibold transition-colors ${
                 w === window
                   ? "bg-paper text-ink shadow-sm"
                   : "text-ink-muted hover:text-ink"
@@ -92,10 +92,10 @@ export function FormSection({
           accent
         />
         <StatTile label="Season average PIR" value={formatStat(seasonPir)} />
-        <div className="border-line flex flex-col-reverse border-t-2 pt-2">
-          <dt className="text-ink-muted text-sm">{trend.label} compared with season</dt>
+        <div className="flex flex-col-reverse border-t-2 border-line pt-2">
+          <dt className="text-sm text-ink-muted">{trend.label} compared with season</dt>
           <dd
-            className={`font-display flex items-baseline gap-2 text-5xl leading-none font-bold ${trend.className}`}
+            className={`flex items-baseline gap-2 font-display text-5xl leading-none font-bold ${trend.className}`}
           >
             <span className="text-2xl" aria-hidden>
               {trend.icon}
@@ -108,16 +108,16 @@ export function FormSection({
 
       <div>
         <PirChart games={games} formGameCodes={formGameCodes} seasonPir={seasonPir} />
-        <p className="text-ink-muted mt-3 flex flex-wrap items-center gap-x-5 gap-y-1 text-sm">
+        <p className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-ink-muted">
           <span className="flex items-center gap-2">
-            <span className="bg-accent h-3 w-3 rounded-sm" aria-hidden /> Last {window}{" "}
+            <span className="h-3 w-3 rounded-sm bg-accent" aria-hidden /> Last {window}{" "}
             games
           </span>
           <span className="flex items-center gap-2">
             <span className="h-3 w-3 rounded-sm bg-[#8a8e95]" aria-hidden /> Earlier games
           </span>
           <span className="flex items-center gap-2">
-            <span className="border-ink/60 w-4 border-t border-dashed" aria-hidden />{" "}
+            <span className="w-4 border-t border-dashed border-ink/60" aria-hidden />{" "}
             Season average {formatStat(seasonPir)}
           </span>
         </p>
@@ -126,8 +126,8 @@ export function FormSection({
       <div className="overflow-x-auto">
         <table className="w-full min-w-[560px] text-left text-sm">
           <caption className="sr-only">Last {window} games</caption>
-          <thead className="text-ink-muted text-xs">
-            <tr className="border-line border-b">
+          <thead className="text-xs text-ink-muted">
+            <tr className="border-b border-line">
               <th scope="col" className="py-2 font-semibold">
                 Round
               </th>
@@ -156,21 +156,21 @@ export function FormSection({
           </thead>
           <tbody>
             {recent.toReversed().map((g) => (
-              <tr key={g.gameCode} className="border-line border-b last:border-0">
-                <td className="font-display text-ink-faint py-3 text-base font-semibold">
+              <tr key={g.gameCode} className="border-b border-line last:border-0">
+                <td className="py-3 font-display text-base font-semibold text-ink-faint">
                   {g.round}
                 </td>
                 <td className="py-3">
                   <span className="flex items-center gap-2 font-semibold">
-                    <span className="text-ink-faint w-5 text-xs font-normal">
+                    <span className="w-5 text-xs font-normal text-ink-faint">
                       {g.isHome ? "vs" : "at"}
                     </span>
                     {g.opponent.crestUrl && (
                       <Image
                         src={g.opponent.crestUrl}
                         alt=""
-                        width={22}
-                        height={22}
+                        width={44}
+                        height={44}
                         className="h-[22px] w-[22px] object-contain"
                       />
                     )}
@@ -185,13 +185,13 @@ export function FormSection({
                   </span>
                   {g.teamScore}–{g.opponentScore}
                 </td>
-                <td className="text-ink-muted py-3 text-right">
+                <td className="py-3 text-right text-ink-muted">
                   {Math.round(g.minutes)}
                 </td>
                 <td className="py-3 text-right">{g.points}</td>
                 <td className="py-3 text-right">{g.rebounds}</td>
                 <td className="py-3 text-right">{g.assists}</td>
-                <td className="font-display py-3 text-right text-lg font-bold">
+                <td className="py-3 text-right font-display text-lg font-bold">
                   {g.pir}
                 </td>
               </tr>

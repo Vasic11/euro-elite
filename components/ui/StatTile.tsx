@@ -23,7 +23,7 @@ export function StatTile({
       >
         {value}
         {suffix && (
-          <span className="text-ink-faint ml-0.5 text-lg font-semibold">{suffix}</span>
+          <span className="ml-0.5 text-lg font-semibold text-ink-faint">{suffix}</span>
         )}
       </dd>
     </div>

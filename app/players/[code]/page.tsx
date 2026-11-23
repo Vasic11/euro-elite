@@ -45,12 +45,12 @@ export default async function PlayerPage({ params }: Props) {
     <div className="space-y-6">
       <Link
         href="/players"
-        className="text-ink-muted hover:text-ink inline-flex items-center gap-1.5 text-sm font-semibold"
+        className="inline-flex items-center gap-1.5 text-sm font-semibold text-ink-muted hover:text-ink"
       >
         <span aria-hidden>←</span> All players
       </Link>
 
-      <section className="bg-paper ring-line grid overflow-hidden rounded-lg ring-1 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+      <section className="grid overflow-hidden rounded-lg bg-paper ring-1 ring-line md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
         <div className="relative aspect-square md:aspect-auto md:min-h-[460px]">
           <PlayerPanel
             player={player}
@@ -62,7 +62,7 @@ export default async function PlayerPage({ params }: Props) {
 
         <div className="flex flex-col gap-8 p-6 sm:p-8">
           <div>
-            <p className="text-ink-muted text-2xl leading-tight">{first}</p>
+            <p className="text-2xl leading-tight text-ink-muted">{first}</p>
             <h1 className="font-display text-6xl leading-[0.88] font-extrabold uppercase sm:text-7xl">
               {last}
             </h1>
@@ -71,14 +71,14 @@ export default async function PlayerPage({ params }: Props) {
                 <Image
                   src={player.team.crestUrl}
                   alt=""
-                  width={28}
-                  height={28}
+                  width={56}
+                  height={56}
                   className="h-7 w-7 object-contain"
                 />
               )}
               {player.team.name}
               {player.jerseyNumber && (
-                <span className="text-ink-muted font-normal">#{player.jerseyNumber}</span>
+                <span className="font-normal text-ink-muted">#{player.jerseyNumber}</span>
               )}
             </p>
           </div>
@@ -86,7 +86,7 @@ export default async function PlayerPage({ params }: Props) {
           <dl className="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-5">
             {facts.map(([label, value]) => (
               <div key={label} className="flex flex-col-reverse">
-                <dt className="text-ink-muted text-xs">{label}</dt>
+                <dt className="text-xs text-ink-muted">{label}</dt>
                 <dd className="font-semibold">{value}</dd>
               </div>
             ))}
@@ -100,7 +100,7 @@ export default async function PlayerPage({ params }: Props) {
               <StatTile label="Assists" value={formatStat(averages.assists)} />
             </dl>
           ) : (
-            <p className="bg-canvas text-ink-muted mt-auto rounded-md p-4 text-sm">
+            <p className="mt-auto rounded-md bg-canvas p-4 text-sm text-ink-muted">
               No games played this season yet. Stats appear after his first game.
             </p>
           )}
@@ -109,12 +109,12 @@ export default async function PlayerPage({ params }: Props) {
 
       {averages && (
         <>
-          <section className="bg-paper ring-line grid items-center gap-8 rounded-lg p-6 ring-1 sm:p-8 lg:grid-cols-[auto_1fr]">
+          <section className="grid items-center gap-8 rounded-lg bg-paper p-6 ring-1 ring-line sm:p-8 lg:grid-cols-[auto_1fr]">
             <div>
               <h2 className="font-display text-2xl font-extrabold uppercase">
                 Season profile
               </h2>
-              <p className="text-ink-muted text-sm">
+              <p className="text-sm text-ink-muted">
                 Per game, {averages.games} games played
               </p>
               <div className="mt-2 flex justify-center">

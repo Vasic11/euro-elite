@@ -12,7 +12,7 @@ export function FeaturedPlayer({ player }: { player: Player }) {
   return (
     <Link
       href={`/players/${player.code}`}
-      className="group bg-paper ring-line grid overflow-hidden rounded-lg ring-1 sm:grid-cols-[1.1fr_1fr] lg:grid-cols-1 xl:grid-cols-[1.1fr_1fr]"
+      className="group grid overflow-hidden rounded-lg bg-paper ring-1 ring-line transition-shadow duration-300 hover:shadow-[0_24px_48px_-24px_rgb(0_0_0/0.4)] hover:ring-accent sm:grid-cols-[1.1fr_1fr] lg:grid-cols-1 xl:grid-cols-[1.1fr_1fr]"
     >
       <div className="relative aspect-square sm:aspect-auto sm:min-h-[340px] lg:aspect-[4/3] xl:aspect-auto">
         <PlayerPanel
@@ -25,12 +25,12 @@ export function FeaturedPlayer({ player }: { player: Player }) {
 
       <div className="flex flex-col justify-between gap-6 p-6">
         <div>
-          <p className="text-accent-ink text-sm font-semibold">Leads the league in PIR</p>
-          <p className="text-ink-muted mt-3 text-lg leading-tight">{first}</p>
-          <p className="font-display group-hover:text-accent-ink text-5xl leading-[0.9] font-extrabold uppercase">
+          <p className="text-sm font-semibold text-accent-ink">Leads the league in PIR</p>
+          <p className="mt-3 text-lg leading-tight text-ink-muted">{first}</p>
+          <p className="font-display text-5xl leading-[0.9] font-extrabold uppercase group-hover:text-accent-ink">
             {last}
           </p>
-          <p className="text-ink-muted mt-2 text-sm">{player.team.name}</p>
+          <p className="mt-2 text-sm text-ink-muted">{player.team.name}</p>
         </div>
 
         {a && (
@@ -56,8 +56,8 @@ function BigStat({
   accent?: boolean;
 }) {
   return (
-    <div className="border-line flex flex-col-reverse border-t pt-2">
-      <dt className="text-ink-muted text-xs">{label}</dt>
+    <div className="flex flex-col-reverse border-t border-line pt-2">
+      <dt className="text-xs text-ink-muted">{label}</dt>
       <dd
         className={`font-display text-4xl leading-none font-bold ${accent ? "text-accent-ink" : ""}`}
       >

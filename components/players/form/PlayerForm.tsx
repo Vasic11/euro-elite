@@ -20,7 +20,7 @@ export async function PlayerForm({
   } catch {
     // Ako ovaj endpoint ne radi, ne rušimo ceo profil, samo ovu sekciju.
     return (
-      <p className="bg-paper text-ink-muted ring-line rounded-lg p-6 text-sm ring-1">
+      <p className="rounded-lg bg-paper p-6 text-sm text-ink-muted ring-1 ring-line">
         Game-by-game stats are unavailable right now. Season averages above are up to
         date.
       </p>
@@ -34,7 +34,7 @@ export async function PlayerForm({
 export function PlayerFormSkeleton() {
   return (
     <div
-      className="bg-paper ring-line h-[640px] animate-pulse rounded-lg ring-1"
+      className="h-[640px] animate-pulse rounded-lg bg-paper ring-1 ring-line"
       aria-label="Loading form"
     />
   );

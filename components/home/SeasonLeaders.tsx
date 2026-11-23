@@ -14,10 +14,10 @@ export function SeasonLeaders({ players }: { players: Player[] }) {
         return (
           <section
             key={category.key}
-            className="bg-paper ring-line rounded-lg p-5 ring-1"
+            className="rounded-lg bg-paper p-5 ring-1 ring-line"
           >
             <h3 className="font-display text-xl font-bold">{category.label}</h3>
-            <ol className="divide-line mt-3 divide-y">
+            <ol className="mt-3 divide-y divide-line">
               {leaders.map((p, i) => (
                 <li key={p.code}>
                   <Link
@@ -25,7 +25,7 @@ export function SeasonLeaders({ players }: { players: Player[] }) {
                     className="group flex items-center gap-3 py-2.5"
                   >
                     <span
-                      className={`font-display w-4 text-lg font-bold ${i === 0 ? "text-accent-ink" : "text-ink-faint"}`}
+                      className={`w-4 font-display text-lg font-bold ${i === 0 ? "text-accent-ink" : "text-ink-faint"}`}
                     >
                       {i + 1}
                     </span>
@@ -33,14 +33,14 @@ export function SeasonLeaders({ players }: { players: Player[] }) {
                       <Image
                         src={p.team.crestUrl}
                         alt=""
-                        width={22}
-                        height={22}
+                        width={44}
+                        height={44}
                         className="h-[22px] w-[22px] object-contain"
                       />
                     ) : (
                       <span className="h-[22px] w-[22px]" />
                     )}
-                    <span className="group-hover:text-accent-ink min-w-0 flex-1 truncate text-sm font-semibold">
+                    <span className="min-w-0 flex-1 truncate text-sm font-semibold group-hover:text-accent-ink">
                       {p.name}
                     </span>
                     <span className="font-display text-xl font-bold">

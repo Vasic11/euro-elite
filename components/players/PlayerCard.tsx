@@ -20,7 +20,7 @@ export function PlayerCard({
   return (
     <Link
       href={`/players/${player.code}`}
-      className="group bg-paper ring-line flex h-full flex-col overflow-hidden rounded-lg shadow-[0_1px_0_rgb(0_0_0/0.06)] ring-1 transition-shadow hover:shadow-[0_8px_24px_-12px_rgb(0_0_0/0.25)]"
+      className="group flex h-full flex-col overflow-hidden rounded-lg bg-paper shadow-[0_1px_0_rgb(0_0_0/0.06)] ring-1 ring-line transition-shadow hover:shadow-[0_8px_24px_-12px_rgb(0_0_0/0.25)]"
     >
       <div className="relative aspect-[4/3.4]">
         <PlayerPanel
@@ -29,15 +29,15 @@ export function PlayerCard({
           sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
         />
         {averages && (
-          <span className="bg-ink font-display absolute top-3 right-3 rounded px-2 py-1 text-sm leading-none font-semibold text-white">
+          <span className="absolute top-3 right-3 rounded bg-ink px-2 py-1 font-display text-sm leading-none font-semibold text-white">
             PIR{" "}
-            <span className="text-accent text-lg font-bold">
+            <span className="text-lg font-bold text-accent">
               {formatStat(averages.pir)}
             </span>
           </span>
         )}
         {player.position && (
-          <span className="font-display text-ink absolute bottom-3 left-4 text-sm font-bold">
+          <span className="absolute bottom-3 left-3 rounded bg-paper/90 px-2 py-0.5 font-display text-sm font-bold text-ink">
             {POSITION_LABEL[player.position]}
           </span>
         )}
@@ -45,17 +45,17 @@ export function PlayerCard({
 
       <div className="flex flex-1 flex-col gap-3 p-4">
         <div>
-          <p className="text-ink-muted text-sm leading-tight">{first}</p>
-          <h3 className="font-display group-hover:text-accent-ink text-2xl leading-tight font-extrabold uppercase">
+          <p className="text-sm leading-tight text-ink-muted">{first}</p>
+          <h3 className="font-display text-2xl leading-tight font-extrabold uppercase group-hover:text-accent-ink">
             {last}
           </h3>
-          <p className="text-ink-muted mt-1.5 flex items-center gap-1.5 text-sm">
+          <p className="mt-1.5 flex items-center gap-1.5 text-sm text-ink-muted">
             {player.team.crestUrl && (
               <Image
                 src={player.team.crestUrl}
                 alt=""
-                width={18}
-                height={18}
+                width={36}
+                height={36}
                 className="h-[18px] w-[18px] object-contain"
               />
             )}
@@ -63,7 +63,7 @@ export function PlayerCard({
           </p>
         </div>
 
-        <dl className="border-line mt-auto grid grid-cols-3 border-t pt-3">
+        <dl className="mt-auto grid grid-cols-3 border-t border-line pt-3">
           <CardStat label="Pts" value={averages?.points} />
           <CardStat label="Reb" value={averages?.rebounds} />
           <CardStat label="Ast" value={averages?.assists} />
@@ -77,7 +77,7 @@ function CardStat({ label, value }: { label: string; value: number | undefined }
   return (
     // flex-col-reverse: u HTML-u dt (labela) ide pre dd (vrednosti), a vizuelno je vrednost gore.
     <div className="flex flex-col-reverse">
-      <dt className="text-ink-faint mt-1 text-xs">{label}</dt>
+      <dt className="mt-1 text-xs text-ink-faint">{label}</dt>
       <dd className="font-display text-xl leading-none font-bold">{formatStat(value)}</dd>
     </div>
   );
