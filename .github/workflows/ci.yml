@@ -1,0 +1,22 @@
+# Pri svakom push-u i pull request-u: lint, TypeScript, testovi i format.
+# Ako nešto padne, commit na GitHub-u dobija crveni X, a ti email.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run format:check
