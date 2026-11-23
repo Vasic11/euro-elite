@@ -12,9 +12,12 @@ import type { ScheduledGame } from "@/lib/stats/aggregate";
 export function GameRow({
   game,
   highlight,
+  ranks,
 }: {
   game: ScheduledGame;
   highlight?: string;
+  /** Mesto na tabeli po kodu tima; ako je prosleđeno, prikazuje se "(6)" pored imena. */
+  ranks?: Map<string, number>;
 }) {
   const homeWon = game.played && game.homeScore > game.awayScore;
   const awayWon = game.played && game.awayScore > game.homeScore;
@@ -26,7 +29,12 @@ export function GameRow({
         <p>Round {game.round}</p>
       </div>
 
-      <TeamCell team={game.home} align="right" bold={game.home.code === highlight} />
+      <TeamCell
+        team={game.home}
+        align="right"
+        bold={game.home.code === highlight}
+        rank={ranks?.get(game.home.code)}
+      />
 
       {game.played ? (
         <div className="flex overflow-hidden rounded-md ring-1 ring-line">
@@ -39,7 +47,12 @@ export function GameRow({
         </span>
       )}
 
-      <TeamCell team={game.away} align="left" bold={game.away.code === highlight} />
+      <TeamCell
+        team={game.away}
+        align="left"
+        bold={game.away.code === highlight}
+        rank={ranks?.get(game.away.code)}
+      />
     </li>
   );
 }
@@ -60,16 +73,21 @@ function TeamCell({
   team,
   align,
   bold,
+  rank,
 }: {
   team: TeamSummary;
   align: "left" | "right";
   bold: boolean;
+  rank?: number;
 }) {
   return (
     <Link
       href={`/teams/${team.code.toLowerCase()}`}
-      className={`flex min-w-0 items-center gap-2.5 hover:text-accent-ink ${
-        align === "right" ? "flex-row-reverse text-right" : ""
+      // Na telefonu je grb iznad imena (centrirano), na širem ekranu pored imena.
+      className={`flex min-w-0 flex-col items-center gap-1 text-center hover:text-accent-ink sm:gap-2.5 ${
+        align === "right"
+          ? "sm:flex-row-reverse sm:text-right"
+          : "sm:flex-row sm:text-left"
       }`}
     >
       {team.crestUrl && (
@@ -81,8 +99,13 @@ function TeamCell({
           className="h-8 w-8 shrink-0 object-contain"
         />
       )}
-      <span className={`truncate ${bold ? "font-bold" : "font-medium"}`}>
-        {team.shortName}
+      <span className={`min-w-0 leading-tight ${bold ? "font-bold" : "font-medium"}`}>
+        {/* Puno ime na širem ekranu, kratko na telefonu */}
+        <span className="hidden sm:inline">{team.name}</span>
+        <span className="sm:hidden">{team.shortName}</span>
+        {rank != null && (
+          <span className="ml-1.5 text-sm font-normal text-ink-faint">({rank})</span>
+        )}
       </span>
     </Link>
   );

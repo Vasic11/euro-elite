@@ -101,3 +101,8 @@ export function nextRound(games: ScheduledGame[]): ScheduledGame[] {
     .filter((g) => g.round === round)
     .toSorted((a, b) => a.date.localeCompare(b.date));
 }
+
+/** Mesto na tabeli po kodu tima (1 = prvo mesto), za prikaz "(6)" pored imena. */
+export function rankMap(rows: StandingRow[]): Map<string, number> {
+  return new Map(rows.map((row, i) => [row.team.code, i + 1]));
+}

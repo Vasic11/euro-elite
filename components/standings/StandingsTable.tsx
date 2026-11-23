@@ -92,7 +92,15 @@ export function StandingsTable({
                         />
                       )}
                       <span className={isHighlighted ? "font-bold" : ""}>
-                        {row.team.shortName}
+                        {/* Puno ime u punoj tabeli na širem ekranu; kratko u kompaktnoj i na telefonu */}
+                        {compact ? (
+                          row.team.shortName
+                        ) : (
+                          <>
+                            <span className="hidden sm:inline">{row.team.name}</span>
+                            <span className="sm:hidden">{row.team.shortName}</span>
+                          </>
+                        )}
                       </span>
                     </Link>
                   </td>

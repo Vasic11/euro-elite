@@ -9,6 +9,7 @@ import { StandingsTable } from "@/components/standings/StandingsTable";
 import { SEASON_LABEL } from "@/lib/euroleague/config";
 import { getPlayers, getTeams } from "@/lib/euroleague/players";
 import { getNextRound, getStandings } from "@/lib/euroleague/standings";
+import { rankMap } from "@/lib/stats/standings";
 
 /** Početna. Serverska komponenta: podaci se uzimaju na serveru, browser dobija gotov HTML. */
 export default async function HomePage() {
@@ -18,6 +19,7 @@ export default async function HomePage() {
     getStandings(),
     getNextRound(),
   ]);
+  const ranks = rankMap(standings);
   const [featured, ...rest] = players; // getPlayers je već sortiran po PIR-u
   const topPerformers = rest.slice(0, 8);
 
@@ -73,7 +75,7 @@ export default async function HomePage() {
             </h2>
             <ul className="space-y-2">
               {next.map((g) => (
-                <GameRow key={g.gameCode} game={g} />
+                <GameRow key={g.gameCode} game={g} ranks={ranks} />
               ))}
             </ul>
           </section>

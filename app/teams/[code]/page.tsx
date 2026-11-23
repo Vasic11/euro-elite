@@ -14,6 +14,7 @@ import { getStandings, getTeamGames } from "@/lib/euroleague/standings";
 import { averageTeamPir } from "@/lib/euroleague/teamStats";
 import type { Player, Position } from "@/lib/euroleague/types";
 import type { ScheduledGame } from "@/lib/stats/aggregate";
+import { rankMap } from "@/lib/stats/standings";
 
 type Props = {
   params: Promise<{ code: string }>;
@@ -56,6 +57,7 @@ export default async function TeamPage({ params, searchParams }: Props) {
     getStandings(),
   ]);
   const nextGame = upcoming[0];
+  const ranks = rankMap(standings);
   const teamPath = `/teams/${team.code.toLowerCase()}`;
 
   const color = clubColor(team.code);
@@ -112,7 +114,7 @@ export default async function TeamPage({ params, searchParams }: Props) {
         <section className="space-y-3">
           <h2 className="font-display text-2xl font-extrabold uppercase">Next game</h2>
           <ul>
-            <GameRow game={nextGame} highlight={team.code} />
+            <GameRow game={nextGame} highlight={team.code} ranks={ranks} />
           </ul>
         </section>
       )}
@@ -147,13 +149,19 @@ export default async function TeamPage({ params, searchParams }: Props) {
           })}
 
         {tab === "results" && (
-          <GameList games={results} highlight={team.code} empty="No games played yet." />
+          <GameList
+            games={results}
+            highlight={team.code}
+            empty="No games played yet."
+            ranks={ranks}
+          />
         )}
         {tab === "schedule" && (
           <GameList
             games={upcoming}
             highlight={team.code}
             empty="No games left on the schedule."
+            ranks={ranks}
           />
         )}
         {tab === "standings" && <StandingsTable rows={standings} highlight={team.code} />}
@@ -166,16 +174,18 @@ function GameList({
   games,
   highlight,
   empty,
+  ranks,
 }: {
   games: ScheduledGame[];
   highlight: string;
   empty: string;
+  ranks: Map<string, number>;
 }) {
   if (games.length === 0) return <p className="text-ink-muted">{empty}</p>;
   return (
     <ul className="space-y-2">
       {games.map((g) => (
-        <GameRow key={g.gameCode} game={g} highlight={highlight} />
+        <GameRow key={g.gameCode} game={g} highlight={highlight} ranks={ranks} />
       ))}
     </ul>
   );

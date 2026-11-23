@@ -4,6 +4,7 @@ import { GameRow } from "@/components/games/GameRow";
 import { StandingsTable } from "@/components/standings/StandingsTable";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { getNextRound, getStandings } from "@/lib/euroleague/standings";
+import { rankMap } from "@/lib/stats/standings";
 
 export const metadata: Metadata = {
   title: "Standings",
@@ -12,6 +13,7 @@ export const metadata: Metadata = {
 
 export default async function StandingsPage() {
   const [standings, next] = await Promise.all([getStandings(), getNextRound()]);
+  const ranks = rankMap(standings);
 
   return (
     <div className="space-y-12">
@@ -30,7 +32,7 @@ export default async function StandingsPage() {
           </h2>
           <ul className="space-y-2">
             {next.map((g) => (
-              <GameRow key={g.gameCode} game={g} />
+              <GameRow key={g.gameCode} game={g} ranks={ranks} />
             ))}
           </ul>
         </section>
