@@ -10,30 +10,20 @@ import { PlayerPanel } from "@/components/players/PlayerPanel";
 import { RadarChart } from "@/components/players/RadarChart";
 import { StatTile } from "@/components/ui/StatTile";
 import { BackLink } from "@/components/ui/BackLink";
+import { ContextBackLink } from "@/components/ui/ContextBackLink";
 import { ageFrom, formatStat, POSITION_LABEL, splitName } from "@/lib/euroleague/format";
-import { getPlayer, getTeam } from "@/lib/euroleague/players";
+import { getPlayer, getPlayers, getTeams } from "@/lib/euroleague/players";
 
-type Props = {
-  params: Promise<{ code: string }>;
-  searchParams: Promise<{ from?: string | string[] }>;
-};
+type Props = { params: Promise<{ code: string }> };
 
 /**
- * Dugme za povratak vodi tamo odakle je korisnik došao (?from=/teams/zal).
- * Prihvatamo samo naše poznate putanje, nikad spoljni URL (inače bi neko mogao
- * da napravi link koji vodi na tuđi sajt).
+ * Profili svih igrača se prave unapred, pri build-u (ISR): posetilac dobija gotovu
+ * stranicu odmah, a podaci se osvežavaju u pozadini. Igrač koji se pojavi kasnije
+ * (novi transfer) dobija stranicu pri prvoj poseti.
  */
-async function backTarget(
-  from: string | string[] | undefined,
-): Promise<{ href: string; label: string }> {
-  if (from === "/") return { href: "/", label: "Home" };
-  const teamCode =
-    typeof from === "string" ? from.match(/^\/teams\/([a-z]+)$/)?.[1] : undefined;
-  if (teamCode) {
-    const team = await getTeam(teamCode);
-    if (team) return { href: `/teams/${teamCode}`, label: `Back to ${team.shortName}` };
-  }
-  return { href: "/players", label: "All players" };
+export async function generateStaticParams() {
+  const players = await getPlayers();
+  return players.map((p) => ({ code: p.code }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -47,9 +37,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 /** Profil igrača: /players/[code]. */
-export default async function PlayerPage({ params, searchParams }: Props) {
-  const [{ code }, { from }] = await Promise.all([params, searchParams]);
-  const [player, back] = await Promise.all([getPlayer(code), backTarget(from)]);
+export default async function PlayerPage({ params }: Props) {
+  const { code } = await params;
+  const [player, teams] = await Promise.all([getPlayer(code), getTeams()]);
+  const teamNames = Object.fromEntries(
+    teams.map((t) => [t.code.toLowerCase(), t.shortName]),
+  );
   if (!player) notFound(); // prikazuje app/not-found.tsx
 
   const { averages } = player;
@@ -66,7 +59,10 @@ export default async function PlayerPage({ params, searchParams }: Props) {
 
   return (
     <div className="space-y-6">
-      <BackLink href={back.href} label={back.label} />
+      {/* Suspense je obavezan oko komponente koja čita useSearchParams na statičnoj stranici */}
+      <Suspense fallback={<BackLink href="/players" label="All players" />}>
+        <ContextBackLink teamNames={teamNames} />
+      </Suspense>
 
       <section className="grid overflow-hidden rounded-lg bg-paper ring-1 ring-line md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
         <div className="relative aspect-square md:aspect-auto md:min-h-[460px]">

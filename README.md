@@ -29,7 +29,9 @@ app/                          rute (svaki folder = URL)
   players/page.tsx            /players          svi igrači + filteri
   players/[code]/page.tsx     /players/:code    profil igrača
   teams/page.tsx              /teams            svi klubovi
-  teams/[code]/page.tsx       /teams/zal        klub: trener, naredna utakmica, tabovi Roster/Results/Schedule/Standings
+  teams/[code]/layout.tsx                       zaglavlje kluba, naredna utakmica, tabovi (zajedničko za sve tabove)
+  teams/[code]/page.tsx       /teams/zal        roster po pozicijama
+  teams/[code]/results|schedule|standings       ostali tabovi kao posebne stranice
   standings/page.tsx          /standings        tabela lige i naredno kolo
   template.tsx                                  animacija ulaska svake stranice
   loading.tsx, error.tsx, not-found.tsx
@@ -95,3 +97,7 @@ Prosek PIR-a u poslednjih N odigranih utakmica (podrazumevano 5) poredi se sa pr
 - **Proseci i forma** se računaju iz box score-a svake odigrane utakmice (`lib/stats/aggregate.ts`). Endpoint sa gotovim prosecima izostavlja neke igrače koji su igrali.
 - **„Missed last game“**: stalni član sastava (bio u sastavu na bar pola utakmica tima) koji nije bio u sastavu od 12 igrača na poslednjoj utakmici. Igrači sa kraja klupe se ne označavaju. API ne kaže razlog (povreda, bolest, odluka trenera), pa ne pišemo „povređen“.
 - **Boje klubova** API ne vraća; ručno su upisane u `lib/euroleague/clubColors.ts`.
+
+## Kako se stranice prave
+
+Sve stranice, uključujući profil svakog igrača i stranice klubova, prave se **unapred pri build-u** (`generateStaticParams`) i osvežavaju u pozadini na sat vremena (ISR). Posetilac uvek dobija gotovu stranicu; ako osvežavanje ne uspe (npr. API ne odgovara), ostaje prethodna verzija umesto greške. Zato stranice ne čitaju `searchParams` na serveru: tabovi kluba su posebne putanje, a `?from=` za dugme "Back to…" čita se u browseru (`ContextBackLink`).
