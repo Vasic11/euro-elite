@@ -49,6 +49,7 @@ learn through the work.
 | `npm run build` | production build (prerenders ~430 pages, hits the real API) |
 | `npm run lint` / `typecheck` / `test` / `format:check` | CI checks |
 | `npm run format` | fix formatting |
+| `npm run db:generate` / `db:migrate` / `db:studio` | Drizzle migrations (direct `DATABASE_URL`) and table browser |
 
 ## Stack (versions matter — Next 16 differs from training data)
 
@@ -68,8 +69,16 @@ app/            routes; pages are Server Components that fetch data
 components/     UI by feature (players/, teams/, games/, standings/, home/, ui/)
 lib/euroleague/ everything that knows the EuroLeague API (fetch, schemas, mapping)
 lib/stats/      pure functions (aggregation, form, standings, leaders) + tests
+lib/db/         Drizzle schema (6 tables) and getDb() (Neon HTTP, pooled URL)
+lib/sync/       API → DB: rows.ts (pure mapping + rules, tested), run.ts (runSync)
+drizzle/        generated SQL migrations, committed
 .github/        ci.yml (checks on every push), health.yml (daily /api/health)
 ```
+
+DB sync: Vercel Cron (`vercel.json`, daily ~04:00 UTC) → `/api/cron/sync`
+(Bearer `CRON_SECRET`) → `runSync()`: upsert clubs, rosters, schedule, then box
+scores of played games that are missing or from the last 3 days, each game in
+one `db.batch`. Pages still read the API until the next PR.
 
 Data flow: API → `client.ts` (`euroleagueFetch`: cache + Zod) → `season.ts` /
 `players.ts` (map to our types in `types.ts`) → server page → client
@@ -89,6 +98,11 @@ reason behind something is unclear.
    player-club history (transfers), schedule, full box score per player per
    game. Nightly sync (Vercel Cron) from the API; site reads from DB; health
    check keeps working. Branch `feat/database`.
+   **PR 1 done** (schema, migration, sync). **PR 2:** pages read from DB,
+   `/api/health` checks the latest `ok` row in `sync_runs` (< 36 h), and
+   `.github/workflows/sync.yml` calls `/api/cron/sync` hourly 18–23 UTC with
+   `CRON_SECRET` from GitHub Secrets (`concurrency` group, Vercel cron stays
+   as fallback).
 2. Detailed player stat tables like euroleague.net: season totals/averages and
    per game, all box score columns (2FG/3FG/FT made-att-%, OREB/DREB, AST, STL,
    TO, BLK for/against, fouls committed/drawn, PIR, minutes as mm:ss), sticky

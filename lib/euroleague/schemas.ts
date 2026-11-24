@@ -81,25 +81,27 @@ export const scheduleResponseSchema = z.object({
 });
 
 /** Jedan igrač u box score-u (/v3/.../games/{code}/stats). PIR = valuation. */
+const boxScoreStatsSchema = z.object({
+  timePlayed: z.number(),
+  valuation: z.number(),
+  points: z.number(),
+  fieldGoalsMade2: z.number(),
+  fieldGoalsAttempted2: z.number(),
+  fieldGoalsMade3: z.number(),
+  fieldGoalsAttempted3: z.number(),
+  freeThrowsMade: z.number(),
+  freeThrowsAttempted: z.number(),
+  totalRebounds: z.number(),
+  assistances: z.number(),
+  steals: z.number(),
+  blocksFavour: z.number(),
+  turnovers: z.number(),
+  startFive: z.boolean().nullish(),
+});
+
 const boxScorePlayerSchema = z.object({
   player: z.object({ person: z.object({ code: z.string() }) }),
-  stats: z.object({
-    timePlayed: z.number(),
-    valuation: z.number(),
-    points: z.number(),
-    fieldGoalsMade2: z.number(),
-    fieldGoalsAttempted2: z.number(),
-    fieldGoalsMade3: z.number(),
-    fieldGoalsAttempted3: z.number(),
-    freeThrowsMade: z.number(),
-    freeThrowsAttempted: z.number(),
-    totalRebounds: z.number(),
-    assistances: z.number(),
-    steals: z.number(),
-    blocksFavour: z.number(),
-    turnovers: z.number(),
-    startFive: z.boolean().nullish(),
-  }),
+  stats: boxScoreStatsSchema,
 });
 
 export const boxScoreResponseSchema = z.object({
@@ -109,3 +111,74 @@ export const boxScoreResponseSchema = z.object({
 
 export type ScheduleGameDto = z.infer<typeof scheduleGameSchema>;
 export type BoxScoreDto = z.infer<typeof boxScoreResponseSchema>;
+
+/*
+ * Šeme za noćni sync u bazu. Proširuju gornje šeme (`.extend`), a gornje ostaju
+ * kakve jesu: ako API izbaci neko od novih polja, pada samo sync (i pokuša opet
+ * sledeći put), a sajt koji danas čita API direktno nastavlja da radi.
+ *
+ * Polja su obavezna tamo gde ih je API vratio u svih 130 box score-ova i 982
+ * stavke rostera sezone 2026-27 (provereno 24.11.2026); nullish gde baza i
+ * dozvoljava prazno.
+ */
+
+/** Poeni po četvrtinama; `extraPeriods` je mapa { "1": 14, "2": 9 } za produžetke. */
+const partialsSchema = z
+  .object({
+    partials1: z.number(),
+    partials2: z.number(),
+    partials3: z.number(),
+    partials4: z.number(),
+    extraPeriods: z.record(z.string(), z.number()).nullish(),
+  })
+  .nullish();
+
+const syncScheduleSideSchema = scheduleSideSchema.extend({ partials: partialsSchema });
+
+export const syncScheduleGameSchema = scheduleGameSchema.extend({
+  phaseType: z.object({ code: z.string() }),
+  local: syncScheduleSideSchema,
+  road: syncScheduleSideSchema,
+  venue: z.object({ name: z.string().nullish() }).nullish(),
+  audience: z.number().nullish(),
+});
+
+export const syncScheduleResponseSchema = z.object({
+  data: z.array(syncScheduleGameSchema),
+});
+
+export const syncPersonEntrySchema = personEntrySchema.extend({
+  /** Kraj ugovora, ili datum odlaska ako je `active: false`. */
+  endDate: z.string().nullish(),
+});
+
+export const syncClubPeopleResponseSchema = z.array(syncPersonEntrySchema);
+
+const syncBoxScorePlayerSchema = z.object({
+  player: z.object({
+    // Osoba iz box score-a: sync je upisuje u `people` pre statistike, da spoljni
+    // ključ ne pukne za igrača kog nema u rosteru.
+    person: personEntrySchema.shape.person,
+  }),
+  stats: boxScoreStatsSchema.extend({
+    dorsal: z.number().nullish(),
+    offensiveRebounds: z.number(),
+    defensiveRebounds: z.number(),
+    blocksAgainst: z.number(),
+    /** Pravopis iz API-ja ("Commited"). */
+    foulsCommited: z.number(),
+    foulsReceived: z.number(),
+    plusMinus: z.number(),
+  }),
+});
+
+const syncBoxScoreSideSchema = z.object({ players: z.array(syncBoxScorePlayerSchema) });
+
+export const syncBoxScoreResponseSchema = z.object({
+  local: syncBoxScoreSideSchema,
+  road: syncBoxScoreSideSchema,
+});
+
+export type SyncScheduleGameDto = z.infer<typeof syncScheduleGameSchema>;
+export type SyncPersonEntryDto = z.infer<typeof syncPersonEntrySchema>;
+export type SyncBoxScoreDto = z.infer<typeof syncBoxScoreResponseSchema>;
