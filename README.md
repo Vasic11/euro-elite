@@ -71,12 +71,16 @@ lib/stats/form.ts             forma (čiste funkcije, pokrivene testovima)
 
 Zvanični EuroLeague API (`api-live.euroleague.net`). Odgovori se keširaju 1h, pa se novo kolo ili transfer na sajtu pojavi najkasnije za sat vremena.
 
-| Endpoint                                                | Sadržaj                      |
-| ------------------------------------------------------- | ---------------------------- |
-| `GET /v2/competitions/E/seasons/{season}/people`        | roster (`type: "J"` = igrač) |
-| `GET /v2/competitions/E/seasons/{season}/clubs`         | klubovi                      |
-| `GET /v2/competitions/E/seasons/{season}/games`         | raspored i rezultati         |
-| `GET /v3/competitions/E/statistics/players/traditional` | prosek igrača za sezonu      |
+| Endpoint                                                      | Sadržaj                                        |
+| ------------------------------------------------------------- | ---------------------------------------------- |
+| `GET /v2/competitions/E/seasons/{season}/clubs`               | klubovi                                        |
+| `GET /v2/competitions/E/seasons/{season}/clubs/{code}/people` | roster kluba (`J` = igrač, `E` = trener)       |
+| `GET /v2/competitions/E/seasons/{season}/games`               | raspored i rezultati                           |
+| `GET /v3/competitions/E/seasons/{season}/games/{code}/stats`  | box score utakmice (iz njega računamo proseke) |
+
+## Rad sa Claude Code
+
+`CLAUDE.md`, `.claude/rules/` i `docs/HISTORY.md` opisuju projekat, pravila i odluke, pa svaka nova sesija u terminalu odmah zna kontekst. `.claude/settings.json` određuje šta Claude sme da pokreće bez pitanja (provere), šta uvek pita (`git push`, instalacija paketa) i šta je zabranjeno (čitanje `.env.local`, `push --force`).
 
 ## Plan
 
