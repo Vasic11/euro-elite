@@ -1,5 +1,6 @@
 import "server-only";
 
+import { unstable_cache } from "next/cache";
 import { cache } from "react";
 
 import {
@@ -10,7 +11,7 @@ import {
 } from "@/lib/stats/aggregate";
 
 import { euroleagueFetch } from "./client";
-import { COMPETITION_CODE, SEASON_CODE } from "./config";
+import { COMPETITION_CODE, DEFAULT_REVALIDATE_SECONDS, SEASON_CODE } from "./config";
 import { formatPersonName } from "./format";
 import { mapLimit } from "./mapLimit";
 import { toTeamSummary } from "./mappers";
@@ -39,8 +40,9 @@ const getClubs = cache(async () => {
  * Roster svakog kluba (igrači, treneri, osoblje), klub po klub.
  * Endpoint za celu sezonu vraća samo jednu stranicu rezultata i preskače igrače,
  * pa je 20 manjih zahteva pouzdanije od jednog velikog.
+ * Svih 20 rostera se kešira kao jedan zapis (vidi `getBoxScores` u season.ts).
  */
-const getRosterEntries = cache(async (): Promise<PersonEntry[]> => {
+async function loadRosterEntries(): Promise<PersonEntry[]> {
   const clubs = await getClubs();
   const rosters = await mapLimit(clubs, 8, (club) =>
     euroleagueFetch(
@@ -49,7 +51,13 @@ const getRosterEntries = cache(async (): Promise<PersonEntry[]> => {
     ),
   );
   return rosters.flat();
-});
+}
+
+const getRosterEntries = cache(
+  unstable_cache(loadRosterEntries, ["roster-entries", SEASON_CODE], {
+    revalidate: DEFAULT_REVALIDATE_SECONDS,
+  }),
+);
 
 /** Aktivni zapisi datog tipa; posle transfera zadržava se najnoviji zapis osobe. */
 function latestActive(entries: PersonEntry[], type: string): PersonEntry[] {
