@@ -29,6 +29,19 @@ of each section.
   client so pages stay static.
 - **Hosting:** Vercel Hobby + Neon Postgres (free tiers). DB created, not yet used.
 - **Commit attribution:** Claude stays as co-author on this project only.
+- **Database (Nov 2026, `feat/database`):** Drizzle **0.45 stable** (npm
+  `latest`), not the 1.0 RC. Neon HTTP driver (`drizzle-orm/neon-http`) with
+  `db.batch` for atomic writes; migrations via `drizzle-kit generate` +
+  `migrate` on the direct `DATABASE_URL`, runtime on `DATABASE_URL_POOLED`.
+  Natural keys from the API (club/person code, season + game code). Neon runs
+  Postgres 18.
+- **Sync:** Vercel **Cron** (`vercel.json`), not the newer Schedules (still
+  beta). Hobby allows once a day with ±59 min precision, so evening results
+  will come from a GitHub Action (hourly 18–23 UTC) in the next PR; the 04:00
+  cron stays as a fallback. First full sync: ~10 s.
+- **Sync has its own Zod schemas** (`sync*` in `schemas.ts`, built with
+  `.extend`), so new required fields can only break the sync, never the live
+  site that still reads the API directly.
 
 ## Lessons (avoid repeating)
 
@@ -42,3 +55,11 @@ of each section.
 - `@types/node` had to be 22 for Vitest; Vitest config is `.mts` (ESM).
 - Stale CSS in dev came from a stray `package-lock.json` in the user's home
   folder → fixed with `turbopack.root`.
+- Postgres rejects `INSERT … ON CONFLICT DO UPDATE` that hits the same key
+  twice in one statement; a transferred player is in two rosters. Dedupe rows
+  before every upsert (`uniqueBy` in `lib/sync/rows.ts`).
+- Two `NULL`s are distinct in a Postgres unique key by default; the roster
+  stint key needs `NULLS NOT DISTINCT` or null start dates duplicate on every sync.
+- Roster `startDate`/`endDate` have no time zone; we store them as UTC.
+- `player_game_stats` keeps 0-second rows (squad membership), so every average
+  must filter `seconds > 0` — go through `rowToBoxLine` + `averagesFromLines`.

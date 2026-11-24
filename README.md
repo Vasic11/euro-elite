@@ -2,7 +2,7 @@
 
 Scouting platforma za EuroLeague: živa statistika igrača i timova, profil igrača sa radar dijagramom, a uskoro i forma kroz kola i fantasy predlozi.
 
-**Stack:** Next.js 16 (App Router) · React 19 · TypeScript · Tailwind CSS 4 · Zod · Framer Motion · Vitest
+**Stack:** Next.js 16 (App Router) · React 19 · TypeScript · Tailwind CSS 4 · Zod · Framer Motion · Vitest · Neon Postgres + Drizzle ORM
 
 ## Pokretanje
 
@@ -12,14 +12,17 @@ cp .env.example .env.local   # opciono: izbor sezone
 npm run dev
 ```
 
-| Skripta             | Šta radi              |
-| ------------------- | --------------------- |
-| `npm run dev`       | razvojni server       |
-| `npm run build`     | produkcijski build    |
-| `npm run lint`      | ESLint                |
-| `npm run typecheck` | TypeScript provera    |
-| `npm run format`    | Prettier formatiranje |
-| `npm test`          | Vitest testovi        |
+| Skripta               | Šta radi                                            |
+| --------------------- | --------------------------------------------------- |
+| `npm run dev`         | razvojni server                                     |
+| `npm run build`       | produkcijski build                                  |
+| `npm run lint`        | ESLint                                              |
+| `npm run typecheck`   | TypeScript provera                                  |
+| `npm run format`      | Prettier formatiranje                               |
+| `npm test`            | Vitest testovi                                      |
+| `npm run db:generate` | nova SQL migracija iz `lib/db/schema.ts`            |
+| `npm run db:migrate`  | primeni migracije na bazu (direktni `DATABASE_URL`) |
+| `npm run db:studio`   | Drizzle Studio: pregled tabela u browseru           |
 
 ## Struktura
 
@@ -55,6 +58,15 @@ lib/euroleague/               sve što zna za EuroLeague API
 
 lib/stats/form.ts             forma (čiste funkcije, pokrivene testovima)
   format.ts                   formatiranje imena, brojeva, godina
+
+lib/db/                       baza (Neon Postgres, Drizzle)
+  schema.ts                   tabele: clubs, people, roster_stints, games, player_game_stats, sync_runs
+  client.ts                   getDb() preko Neon HTTP drajvera (pooled konekcija)
+lib/sync/                     sync API -> baza
+  rows.ts                     čisto mapiranje API -> red baze i pravila šta se sinhronizuje (testovi)
+  run.ts                      runSync(): klubovi, rosteri, raspored, box score-ovi
+app/api/cron/sync/route.ts    GET, zaštićen sa CRON_SECRET; poziva ga Vercel Cron
+drizzle/                      SQL migracije (generiše ih drizzle-kit, idu u git)
 ```
 
 **Tok podataka:** EuroLeague API → `client.ts` (validacija) → `players.ts` (pretvaranje u naš model) → serverska stranica → klijentske komponente samo za interakciju (filteri, accordion, animacije).
@@ -78,6 +90,25 @@ Zvanični EuroLeague API (`api-live.euroleague.net`). Odgovori se keširaju 1h, 
 | `GET /v2/competitions/E/seasons/{season}/games`               | raspored i rezultati                           |
 | `GET /v3/competitions/E/seasons/{season}/games/{code}/stats`  | box score utakmice (iz njega računamo proseke) |
 
+## Baza i sync
+
+Sajt za sada i dalje čita direktno sa API-ja. Baza se puni paralelno, a stranice
+prelaze na nju u sledećem koraku.
+
+- **Šta se čuva:** klubovi, osobe (igrači i treneri), ugovori klub–osoba po
+  sezoni (`roster_stints`, odatle istorija transfera), raspored i kompletan box
+  score po igraču po utakmici (2FG/3FG/FT, OREB/DREB, AST, STL, TO, BLK za i
+  protiv, faulovi napravljeni i dobijeni, +/-, PIR, sekunde). Čuvamo brojeve, a
+  procente i proseke računamo (proseci samo iz utakmica sa `seconds > 0`).
+- **Kad:** Vercel Cron svaki dan oko 04:00 UTC poziva `/api/cron/sync`
+  (`vercel.json`). Na Hobby planu ne može češće od jednom dnevno.
+- **Šta radi:** upsert klubova, rostera i rasporeda, pa box score za odigrane
+  utakmice koje još nisu u bazi ili su iz poslednja 3 dana. Utakmica koja nije
+  odigrana se nikad ne upisuje. Svako pokretanje je zapisano u `sync_runs`.
+  Pokretanje dva puta zaredom ne pravi duplikate.
+- **Ručno pokretanje (lokalno):** `npm run dev`, pa
+  `curl -H "Authorization: Bearer <CRON_SECRET>" http://localhost:3000/api/cron/sync`.
+
 ## Rad sa Claude Code
 
 `CLAUDE.md`, `.claude/rules/` i `docs/HISTORY.md` opisuju projekat, pravila i odluke, pa svaka nova sesija u terminalu odmah zna kontekst. `.claude/settings.json` određuje šta Claude sme da pokreće bez pitanja (provere), šta uvek pita (`git push`, instalacija paketa) i šta je zabranjeno (čitanje `.env.local`, `push --force`).
@@ -88,7 +119,8 @@ Zvanični EuroLeague API (`api-live.euroleague.net`). Odgovori se keširaju 1h, 
 - [x] Prave rute: hub, igrači, profil, timovi
 - [x] Forma: PIR po kolima, prozor 3/5/10, poređenje sa sezonom
 - [x] Tabela lige, rezultati i raspored po klubu
-- [ ] Baza + noćna sinhronizacija (istorija, transferi)
+- [x] Baza + noćna sinhronizacija (istorija, transferi)
+- [ ] Sajt čita iz baze; češći sync uveče (GitHub Actions)
 - [ ] Fantasy: optimalan tim za zadati budžet
 
 ## Forma
