@@ -1,11 +1,12 @@
 import "server-only";
 
+import { unstable_cache } from "next/cache";
 import { cache } from "react";
 
 import type { BoxLine, GameBox, ScheduledGame } from "@/lib/stats/aggregate";
 
 import { euroleagueFetch } from "./client";
-import { COMPETITION_CODE, SEASON_CODE } from "./config";
+import { COMPETITION_CODE, DEFAULT_REVALIDATE_SECONDS, SEASON_CODE } from "./config";
 import { mapLimit } from "./mapLimit";
 import { toTeamSummary } from "./mappers";
 import {
@@ -61,8 +62,12 @@ function toLines(side: BoxScoreDto["local"], teamCode: string): BoxLine[] {
  * svakog igrača koji je ušao u igru (endpoint sa prosecima neke izostavlja).
  *
  * Utakmica čiji box score ne može da se učita se preskače, a ne ruši ceo sajt.
+ *
+ * Ceo rezultat se čuva u kešu kao JEDAN zapis (`unstable_cache`). Bez toga bi
+ * svaka od ~430 stranica pri osvežavanju čitala ~120 zapisa (po jedan za svaki
+ * box score), a Vercel naplaćuje/ograničava svako čitanje iz Runtime Cache-a.
  */
-export const getBoxScores = cache(async (): Promise<GameBox[]> => {
+async function loadBoxScores(): Promise<GameBox[]> {
   const played = (await getSchedule()).filter((g) => g.played);
 
   const boxes = await mapLimit(played, 8, async (game) => {
@@ -88,4 +93,10 @@ export const getBoxScores = cache(async (): Promise<GameBox[]> => {
   });
 
   return boxes.filter((b): b is GameBox => b !== null);
-});
+}
+
+export const getBoxScores = cache(
+  unstable_cache(loadBoxScores, ["box-scores", SEASON_CODE], {
+    revalidate: DEFAULT_REVALIDATE_SECONDS,
+  }),
+);
