@@ -1,4 +1,3 @@
-import type { Club } from "./schemas";
 import type { TeamSummary } from "./types";
 
 /**
@@ -29,13 +28,22 @@ const SHORT_NAMES: Record<string, string> = {
   ZAL: "Zalgiris",
 };
 
-/** Klub iz API-ja -> naš TeamSummary. Koristi se svuda gde se prikazuje tim. */
-export function toTeamSummary(club: Club): TeamSummary {
+/** Imena i grb kluba, kao u tabeli `clubs`. */
+export type ClubNames = {
+  code: string;
+  name: string;
+  editorialName?: string | null;
+  abbreviatedName?: string | null;
+  crestUrl?: string | null;
+};
+
+/** Imena kluba -> naš TeamSummary. Koristi se svuda gde se prikazuje tim. */
+export function teamSummary(club: ClubNames): TeamSummary {
   return {
     code: club.code,
     name: club.name,
     shortName:
       SHORT_NAMES[club.code] ?? club.editorialName ?? club.abbreviatedName ?? club.name,
-    crestUrl: club.images?.crest ?? null,
+    crestUrl: club.crestUrl ?? null,
   };
 }

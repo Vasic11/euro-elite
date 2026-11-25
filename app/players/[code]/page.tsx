@@ -12,7 +12,7 @@ import { StatTile } from "@/components/ui/StatTile";
 import { BackLink } from "@/components/ui/BackLink";
 import { ContextBackLink } from "@/components/ui/ContextBackLink";
 import { ageFrom, formatStat, POSITION_LABEL, splitName } from "@/lib/euroleague/format";
-import { getPlayer, getPlayers, getTeams } from "@/lib/euroleague/players";
+import { getPlayer, getPlayers, getTeams } from "@/lib/data/players";
 
 type Props = { params: Promise<{ code: string }> };
 

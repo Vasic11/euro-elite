@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 import { PlayerExplorer } from "@/components/players/PlayerExplorer";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { getPlayers } from "@/lib/euroleague/players";
+import { getPlayers } from "@/lib/data/players";
 
 export const metadata: Metadata = {
   title: "Players",

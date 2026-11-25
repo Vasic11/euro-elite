@@ -27,7 +27,7 @@ of each section.
 - **Prerender all player and team pages** (`generateStaticParams`) after
   Vercel showed "Stats didn't load" on dynamic renders; `?from=` moved to the
   client so pages stay static.
-- **Hosting:** Vercel Hobby + Neon Postgres (free tiers). DB created, not yet used.
+- **Hosting:** Vercel Hobby + Neon Postgres (free tiers).
 - **Commit attribution:** Claude stays as co-author on this project only.
 - **Database (Nov 2026, `feat/database`):** Drizzle **0.45 stable** (npm
   `latest`), not the 1.0 RC. Neon HTTP driver (`drizzle-orm/neon-http`) with
@@ -42,6 +42,22 @@ of each section.
 - **Sync has its own Zod schemas** (`sync*` in `schemas.ts`, built with
   `.extend`), so new required fields can only break the sync, never the live
   site that still reads the API directly.
+- **Pages read the database (Nov 2026, `feat/db-reads`).** Only the source of
+  four primitives changed (clubs, roster, schedule, box scores →
+  `SeasonData`); `lib/stats` and the domain types stayed, so numbers match by
+  construction. Before the swap a temporary dev-only route diffed API vs DB:
+  0 differences across 380 games, 3254 box lines, 344 players, 20 teams and
+  the standings. The page-facing modules moved to `lib/data/` (they no longer
+  "know the API"); `lib/euroleague` is now only used by the sync and health.
+- **One cache entry for the whole season** (`unstable_cache`, tag `"db"`),
+  same idea as the old single box-score entry: ~430 pages, one Neon read.
+  `runSync()` calls `revalidateTag("db", "max")` (Next 16 needs the second
+  argument): stale-while-revalidate, so no visitor waits on the DB.
+- **Players with equal PIR sort by name.** Before, ties kept the API's input
+  order, which differs from the DB's; now the order is deterministic.
+- **Evening sync via GitHub Actions** (`sync.yml`, hourly 18:05–23:05 UTC,
+  `concurrency: sync`); `:05` because GitHub delays jobs on the full hour most.
+  `/api/health` also fails when the last `ok` sync is older than 36 h.
 
 ## Lessons (avoid repeating)
 
@@ -63,3 +79,11 @@ of each section.
 - Roster `startDate`/`endDate` have no time zone; we store them as UTC.
 - `player_game_stats` keeps 0-second rows (squad membership), so every average
   must filter `seconds > 0` — go through `rowToBoxLine` + `averagesFromLines`.
+- The league corrects box scores hours after a game (game 134: two players'
+  PIR changed after the 04:22 sync). When comparing sources, fetch the API
+  with `revalidate: 0`; the local dev fetch cache can be days old.
+- `revalidateTag(tag, "max")` serves the stale entry on the first request
+  after a sync and refreshes in the background — a check right after a sync
+  needs a second request to see new data.
+- `core.autocrlf=true` + Prettier (LF) makes untouched files show as modified;
+  `git add -A` normalizes them away, then check `git diff --cached --stat`.

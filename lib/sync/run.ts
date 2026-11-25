@@ -2,8 +2,11 @@ import "server-only";
 
 import { and, eq, getTableColumns, sql, type SQL } from "drizzle-orm";
 import type { PgTable } from "drizzle-orm/pg-core";
+import { revalidateTag } from "next/cache";
 
 import { getDb } from "@/lib/db/client";
+import { describeError } from "@/lib/db/errors";
+import { DB_CACHE_TAG } from "@/lib/db/queries";
 import {
   clubs,
   games,
@@ -63,12 +66,6 @@ function setFromExcluded<T extends PgTable>(
       .filter(([key]) => !except.includes(key))
       .map(([key, column]) => [key, sql.raw(`excluded."${column.name}"`)]),
   );
-}
-
-/** Error text for the sync_runs table: short, and never a connection string. */
-function describeError(error: unknown): string {
-  const message = error instanceof Error ? error.message : String(error);
-  return message.replace(/postgres(?:ql)?:\/\/\S+/g, "[redacted]").slice(0, 500);
 }
 
 async function syncClubsAndRosters() {
@@ -269,6 +266,11 @@ export async function runSync(now = new Date()): Promise<SyncResult> {
       error: result.error ?? null,
     })
     .where(eq(syncRuns.id, run.id));
+
+  // New data in the database: mark cached pages stale now instead of waiting
+  // up to an hour. "max" = the next visitor still gets the old page instantly
+  // while the new one renders in the background.
+  if (result.status !== "failed") revalidateTag(DB_CACHE_TAG, "max");
 
   return result;
 }

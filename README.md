@@ -12,17 +12,18 @@ cp .env.example .env.local   # opciono: izbor sezone
 npm run dev
 ```
 
-| Skripta               | Šta radi                                            |
-| --------------------- | --------------------------------------------------- |
-| `npm run dev`         | razvojni server                                     |
-| `npm run build`       | produkcijski build                                  |
-| `npm run lint`        | ESLint                                              |
-| `npm run typecheck`   | TypeScript provera                                  |
-| `npm run format`      | Prettier formatiranje                               |
-| `npm test`            | Vitest testovi                                      |
-| `npm run db:generate` | nova SQL migracija iz `lib/db/schema.ts`            |
-| `npm run db:migrate`  | primeni migracije na bazu (direktni `DATABASE_URL`) |
-| `npm run db:studio`   | Drizzle Studio: pregled tabela u browseru           |
+| Skripta                | Šta radi                                               |
+| ---------------------- | ------------------------------------------------------ |
+| `npm run dev`          | razvojni server                                        |
+| `npm run build`        | produkcijski build                                     |
+| `npm run lint`         | ESLint                                                 |
+| `npm run typecheck`    | TypeScript provera                                     |
+| `npm run format`       | Prettier formatiranje                                  |
+| `npm test`             | Vitest testovi                                         |
+| `npm run db:generate`  | nova SQL migracija iz `lib/db/schema.ts`               |
+| `npm run db:migrate`   | primeni migracije na bazu (direktni `DATABASE_URL`)    |
+| `npm run db:studio`    | Drizzle Studio: pregled tabela u browseru              |
+| `npm run db:last-sync` | poslednjih 5 sync-ova iz `sync_runs` (status, starost) |
 
 ## Struktura
 
@@ -47,29 +48,37 @@ components/
   teams/TeamAccordion.tsx
   ui/                         opšte komponente: Dropdown, StatTile
 
-lib/euroleague/               sve što zna za EuroLeague API
+lib/data/                     ono što stranice uvoze (izvor je baza)
+  players.ts                  getPlayers(), getPlayer(), getTeams(), getTeam()
+  games.ts                    getPlayerGameLog(): utakmice igrača
+  standings.ts                getStandings(), getNextRound(), getTeamGames()
+  assemble.ts                 čiste funkcije: podaci sezone -> Player, Team, Coach (testovi)
+  types.ts                    RosterEntry, SeasonData: oblik nezavisan od izvora
+
+lib/euroleague/               sve što zna za EuroLeague API (koriste ga sync i health)
   config.ts                   URL, sezona, trajanje keša
   client.ts                   jedini fetch ka API-ju (keš + Zod validacija)
   schemas.ts                  Zod šeme: oblik odgovora API-ja
   types.ts                    naši tipovi: Player, Team, SeasonAverages
-  players.ts                  getPlayers(), getPlayer(), getTeams()
-  games.ts                    getPlayerGameLog(): utakmice igrača
-  mappers.ts                  klub iz API-ja -> TeamSummary
-
-lib/stats/form.ts             forma (čiste funkcije, pokrivene testovima)
+  mappers.ts                  imena kluba -> TeamSummary (kratka imena)
   format.ts                   formatiranje imena, brojeva, godina
+
+lib/stats/                    proseci, forma, tabela, lideri (čiste funkcije, testovi)
 
 lib/db/                       baza (Neon Postgres, Drizzle)
   schema.ts                   tabele: clubs, people, roster_stints, games, player_game_stats, sync_runs
   client.ts                   getDb() preko Neon HTTP drajvera (pooled konekcija)
+  queries.ts                  cela sezona iz baze kao jedan keširan zapis (tag "db")
+  health.ts                   provera: poslednji ok sync mlađi od 36 h
 lib/sync/                     sync API -> baza
   rows.ts                     čisto mapiranje API -> red baze i pravila šta se sinhronizuje (testovi)
   run.ts                      runSync(): klubovi, rosteri, raspored, box score-ovi
-app/api/cron/sync/route.ts    GET, zaštićen sa CRON_SECRET; poziva ga Vercel Cron
+app/api/cron/sync/route.ts    GET, zaštićen sa CRON_SECRET; poziva ga Vercel Cron i GitHub Actions
+scripts/last-sync.mjs         npm run db:last-sync
 drizzle/                      SQL migracije (generiše ih drizzle-kit, idu u git)
 ```
 
-**Tok podataka:** EuroLeague API → `client.ts` (validacija) → `players.ts` (pretvaranje u naš model) → serverska stranica → klijentske komponente samo za interakciju (filteri, accordion, animacije).
+**Tok podataka:** EuroLeague API → sync (`lib/sync`, Zod validacija) → Neon baza → `lib/db/queries.ts` (jedan keširan zapis za celu sezonu) → `lib/data` (pretvaranje u naš model) → serverska stranica → klijentske komponente samo za interakciju (filteri, accordion, animacije).
 
 **Pravila:**
 
@@ -81,7 +90,7 @@ drizzle/                      SQL migracije (generiše ih drizzle-kit, idu u git
 
 ## Izvor podataka
 
-Zvanični EuroLeague API (`api-live.euroleague.net`). Odgovori se keširaju 1h, pa se novo kolo ili transfer na sajtu pojavi najkasnije za sat vremena.
+Zvanični EuroLeague API (`api-live.euroleague.net`). Sajt ga ne čita direktno: sync ga prepisuje u bazu, a stranice čitaju bazu (vidi „Baza i sync“).
 
 | Endpoint                                                      | Sadržaj                                        |
 | ------------------------------------------------------------- | ---------------------------------------------- |
@@ -92,16 +101,22 @@ Zvanični EuroLeague API (`api-live.euroleague.net`). Odgovori se keširaju 1h, 
 
 ## Baza i sync
 
-Sajt za sada i dalje čita direktno sa API-ja. Baza se puni paralelno, a stranice
-prelaze na nju u sledećem koraku.
+Stranice čitaju bazu. Cela sezona (klubovi, rosteri, raspored, box score-ovi) se
+čita u jedan zapis keša (`lib/db/queries.ts`, tag `"db"`), pa ~430 stranica ne šalje
+svaka svoje upite. Zapis se osvežava na sat, i odmah posle svakog uspešnog sync-a
+(`revalidateTag`): sledeći posetilac još dobije staru stranicu, a nova se pravi u pozadini.
 
 - **Šta se čuva:** klubovi, osobe (igrači i treneri), ugovori klub–osoba po
   sezoni (`roster_stints`, odatle istorija transfera), raspored i kompletan box
   score po igraču po utakmici (2FG/3FG/FT, OREB/DREB, AST, STL, TO, BLK za i
   protiv, faulovi napravljeni i dobijeni, +/-, PIR, sekunde). Čuvamo brojeve, a
   procente i proseke računamo (proseci samo iz utakmica sa `seconds > 0`).
-- **Kad:** Vercel Cron svaki dan oko 04:00 UTC poziva `/api/cron/sync`
-  (`vercel.json`). Na Hobby planu ne može češće od jednom dnevno.
+- **Kad:** uveče svakog sata 18:05–23:05 UTC preko GitHub Actions
+  (`.github/workflows/sync.yml`, secret `CRON_SECRET`), pa rezultat stiže najkasnije
+  sat posle utakmice. Vercel Cron oko 04:00 UTC (`vercel.json`) ostaje kao rezerva;
+  na Hobby planu ne može češće od jednom dnevno.
+- **Health:** `/api/health` vraća 503 i kad poslednji `ok` sync nije mlađi od 36 h.
+  Iz terminala: `npm run db:last-sync`.
 - **Šta radi:** upsert klubova, rostera i rasporeda, pa box score za odigrane
   utakmice koje još nisu u bazi ili su iz poslednja 3 dana. Utakmica koja nije
   odigrana se nikad ne upisuje. Svako pokretanje je zapisano u `sync_runs`.
@@ -120,7 +135,7 @@ prelaze na nju u sledećem koraku.
 - [x] Forma: PIR po kolima, prozor 3/5/10, poređenje sa sezonom
 - [x] Tabela lige, rezultati i raspored po klubu
 - [x] Baza + noćna sinhronizacija (istorija, transferi)
-- [ ] Sajt čita iz baze; češći sync uveče (GitHub Actions)
+- [x] Sajt čita iz baze; češći sync uveče (GitHub Actions)
 - [ ] Fantasy: optimalan tim za zadati budžet
 
 ## Forma
@@ -136,4 +151,4 @@ Prosek PIR-a u poslednjih N odigranih utakmica (podrazumevano 5) poredi se sa pr
 
 ## Kako se stranice prave
 
-Sve stranice, uključujući profil svakog igrača i stranice klubova, prave se **unapred pri build-u** (`generateStaticParams`) i osvežavaju u pozadini na sat vremena (ISR). Posetilac uvek dobija gotovu stranicu; ako osvežavanje ne uspe (npr. API ne odgovara), ostaje prethodna verzija umesto greške. Zato stranice ne čitaju `searchParams` na serveru: tabovi kluba su posebne putanje, a `?from=` za dugme "Back to…" čita se u browseru (`ContextBackLink`).
+Sve stranice, uključujući profil svakog igrača i stranice klubova, prave se **unapred pri build-u** (`generateStaticParams`) i osvežavaju u pozadini na sat vremena (ISR). Posetilac uvek dobija gotovu stranicu; ako osvežavanje ne uspe (npr. baza ne odgovara), ostaje prethodna verzija umesto greške. Zato stranice ne čitaju `searchParams` na serveru: tabovi kluba su posebne putanje, a `?from=` za dugme "Back to…" čita se u browseru (`ContextBackLink`).

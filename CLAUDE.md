@@ -67,24 +67,29 @@ folder confused root detection).
 ```
 app/            routes; pages are Server Components that fetch data
 components/     UI by feature (players/, teams/, games/, standings/, home/, ui/)
-lib/euroleague/ everything that knows the EuroLeague API (fetch, schemas, mapping)
+lib/data/       what pages import: players, games, standings; assemble.ts (pure, tested)
+lib/euroleague/ everything that knows the EuroLeague API (fetch, schemas); used by sync + health
 lib/stats/      pure functions (aggregation, form, standings, leaders) + tests
-lib/db/         Drizzle schema (6 tables) and getDb() (Neon HTTP, pooled URL)
+lib/db/         Drizzle schema (6 tables), getDb(), queries.ts (season read), health.ts
 lib/sync/       API → DB: rows.ts (pure mapping + rules, tested), run.ts (runSync)
+scripts/        last-sync.mjs (`npm run db:last-sync`)
 drizzle/        generated SQL migrations, committed
-.github/        ci.yml (checks on every push), health.yml (daily /api/health)
+.github/        ci.yml (checks on every push), health.yml (daily /api/health),
+                sync.yml (hourly 18:05–23:05 UTC → /api/cron/sync)
 ```
 
-DB sync: Vercel Cron (`vercel.json`, daily ~04:00 UTC) → `/api/cron/sync`
-(Bearer `CRON_SECRET`) → `runSync()`: upsert clubs, rosters, schedule, then box
-scores of played games that are missing or from the last 3 days, each game in
-one `db.batch`. Pages still read the API until the next PR.
+DB sync: GitHub Actions (`sync.yml`, evenings) and Vercel Cron (`vercel.json`,
+daily ~04:00 UTC, fallback) → `/api/cron/sync` (Bearer `CRON_SECRET`) →
+`runSync()`: upsert clubs, rosters, schedule, then box scores of played games
+that are missing or from the last 3 days, each game in one `db.batch`; then
+`revalidateTag("db", "max")`.
 
-Data flow: API → `client.ts` (`euroleagueFetch`: cache + Zod) → `season.ts` /
-`players.ts` (map to our types in `types.ts`) → server page → client
+Data flow: API → sync → Neon → `lib/db/queries.ts` (`getSeasonFromDb`: the
+whole season as ONE `unstable_cache` entry, tag `"db"`) → `lib/data/*`
+(`assemble.ts` builds `Player`/`Team` with `lib/stats`) → server page → client
 components only where state/animation is needed. Components never use raw API
-shapes. Rendering: ISR, pages revalidate every 1h, finished box scores 24h.
-`/api/health` is dynamic and returns 200/503.
+or DB shapes. Rendering: ISR, pages revalidate every 1h and right after a sync.
+`/api/health` is dynamic: API checks + last `ok` sync < 36 h, returns 200/503.
 
 Details for the API live in `.claude/rules/euroleague-api.md`; UI and design
 rules in `.claude/rules/ui.md` (both load automatically for matching files).
@@ -98,11 +103,9 @@ reason behind something is unclear.
    player-club history (transfers), schedule, full box score per player per
    game. Nightly sync (Vercel Cron) from the API; site reads from DB; health
    check keeps working. Branch `feat/database`.
-   **PR 1 done** (schema, migration, sync). **PR 2:** pages read from DB,
-   `/api/health` checks the latest `ok` row in `sync_runs` (< 36 h), and
-   `.github/workflows/sync.yml` calls `/api/cron/sync` hourly 18–23 UTC with
-   `CRON_SECRET` from GitHub Secrets (`concurrency` group, Vercel cron stays
-   as fallback).
+   **PR 1 done** (schema, migration, sync). **PR 2 done** (`feat/db-reads`):
+   pages read from DB, health checks the last `ok` sync (< 36 h), evening
+   sync via GitHub Actions, `npm run db:last-sync`.
 2. Detailed player stat tables like euroleague.net: season totals/averages and
    per game, all box score columns (2FG/3FG/FT made-att-%, OREB/DREB, AST, STL,
    TO, BLK for/against, fouls committed/drawn, PIR, minutes as mm:ss), sticky

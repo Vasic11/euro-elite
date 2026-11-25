@@ -30,8 +30,9 @@ default `E2026` = 2026-27). All calls go through `euroleagueFetch(path, schema,
 
 ## Conventions
 
-- Fetch box scores with `mapLimit(…, 8)`; a failed box score is skipped, not
-  fatal. Finished games revalidate 24h, everything else 1h.
+- Only the sync (`lib/sync/run.ts`, `revalidate: 0`) and `/api/health` call
+  the API; pages read the database. Fetch box scores with `mapLimit(…, 8)`; a
+  failed box score is skipped (sync status `partial`), not fatal.
 - "Latest game" means max `utcDate`, never array index.
 - `missedLastGame` only flags regulars (in the squad for ≥ half of the team's
   games), otherwise every bench player gets flagged.

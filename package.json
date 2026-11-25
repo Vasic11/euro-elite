@@ -14,7 +14,8 @@
     "test:watch": "vitest",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "db:last-sync": "node --env-file=.env.local scripts/last-sync.mjs"
   },
   "dependencies": {
     "@fontsource/barlow": "^5.3.0",
