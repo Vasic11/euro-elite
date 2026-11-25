@@ -1,0 +1,38 @@
+# Uveče, dok se igraju utakmice, poziva sync svakog sata, pa rezultati stižu na sajt
+# najkasnije sat posle kraja utakmice. Vercel Cron (vercel.json, ~04:00 UTC) ostaje
+# kao rezerva jer Hobby plan dozvoljava samo jedan cron dnevno.
+#
+# Treba secret CRON_SECRET (ista vrednost kao na Vercel-u):
+#   gh secret set CRON_SECRET
+name: Evening sync
+
+on:
+  schedule:
+    # 18:05–23:05 UTC svakog sata (19–00 h po beogradskom zimskom vremenu).
+    # :05, a ne :00, jer GitHub na pun sat ima najveću gužvu i najviše kasni.
+    - cron: "5 18-23 * * *"
+  workflow_dispatch: # dugme "Run workflow" za ručno pokretanje
+
+# Nikad dva sync-a odjednom; novi čeka da se prethodni završi.
+concurrency:
+  group: sync
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Call /api/cron/sync
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "::error::CRON_SECRET secret is not set"
+            exit 1
+          fi
+          curl --fail-with-body --silent --show-error --max-time 300 \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            https://euro-elite.vercel.app/api/cron/sync
