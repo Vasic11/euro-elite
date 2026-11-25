@@ -2,16 +2,16 @@ import "server-only";
 
 import { computeStandings, nextRound, teamGames } from "@/lib/stats/standings";
 
-import { getSchedule } from "./season";
+import { getSeason } from "./season";
 
 export async function getStandings() {
-  return computeStandings(await getSchedule());
+  return computeStandings((await getSeason()).schedule);
 }
 
 export async function getNextRound() {
-  return nextRound(await getSchedule());
+  return nextRound((await getSeason()).schedule);
 }
 
 export async function getTeamGames(teamCode: string) {
-  return teamGames(teamCode, await getSchedule());
+  return teamGames(teamCode, (await getSeason()).schedule);
 }

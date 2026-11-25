@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { GameRow } from "@/components/games/GameRow";
 import { StandingsTable } from "@/components/standings/StandingsTable";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { getNextRound, getStandings } from "@/lib/euroleague/standings";
+import { getNextRound, getStandings } from "@/lib/data/standings";
 import { rankMap } from "@/lib/stats/standings";
 
 export const metadata: Metadata = {

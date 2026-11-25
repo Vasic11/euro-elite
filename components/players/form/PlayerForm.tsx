@@ -1,4 +1,4 @@
-import { getPlayerGameLog } from "@/lib/euroleague/games";
+import { getPlayerGameLog } from "@/lib/data/games";
 
 import { FormSection } from "./FormSection";
 

@@ -7,8 +7,8 @@ import { SeasonLeaders } from "@/components/home/SeasonLeaders";
 import { PlayerGrid } from "@/components/players/PlayerGrid";
 import { StandingsTable } from "@/components/standings/StandingsTable";
 import { SEASON_LABEL } from "@/lib/euroleague/config";
-import { getPlayers, getTeams } from "@/lib/euroleague/players";
-import { getNextRound, getStandings } from "@/lib/euroleague/standings";
+import { getPlayers, getTeams } from "@/lib/data/players";
+import { getNextRound, getStandings } from "@/lib/data/standings";
 import { rankMap } from "@/lib/stats/standings";
 
 /** Početna. Serverska komponenta: podaci se uzimaju na serveru, browser dobija gotov HTML. */

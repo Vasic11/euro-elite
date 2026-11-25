@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { PlayerGrid } from "@/components/players/PlayerGrid";
-import { getTeam } from "@/lib/euroleague/players";
+import { getTeam } from "@/lib/data/players";
 import type { Player, Position } from "@/lib/euroleague/types";
 
 const POSITION_GROUPS: { position: Position | null; title: string }[] = [

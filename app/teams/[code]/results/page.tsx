@@ -1,8 +1,8 @@
 import { notFound } from "next/navigation";
 
 import { GameList } from "@/components/games/GameList";
-import { getTeam } from "@/lib/euroleague/players";
-import { getStandings, getTeamGames } from "@/lib/euroleague/standings";
+import { getTeam } from "@/lib/data/players";
+import { getStandings, getTeamGames } from "@/lib/data/standings";
 import { rankMap } from "@/lib/stats/standings";
 
 export default async function TeamResultsPage({

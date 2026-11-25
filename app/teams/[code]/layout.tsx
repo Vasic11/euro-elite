@@ -5,8 +5,8 @@ import { GameRow } from "@/components/games/GameRow";
 import { TeamHeader } from "@/components/teams/TeamHeader";
 import { TeamTabs } from "@/components/teams/TeamTabs";
 import { BackLink } from "@/components/ui/BackLink";
-import { getTeam, getTeams } from "@/lib/euroleague/players";
-import { getStandings, getTeamGames } from "@/lib/euroleague/standings";
+import { getTeam, getTeams } from "@/lib/data/players";
+import { getStandings, getTeamGames } from "@/lib/data/standings";
 import { rankMap } from "@/lib/stats/standings";
 
 type Props = { params: Promise<{ code: string }>; children: React.ReactNode };

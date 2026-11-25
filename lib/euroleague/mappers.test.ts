@@ -1,22 +1,21 @@
 import { describe, expect, it } from "vitest";
 
-import { toTeamSummary } from "./mappers";
+import { teamSummary } from "./mappers";
 
 const club = (code: string, editorialName: string) => ({
   code,
   name: `${editorialName} Full Name`,
   editorialName,
   abbreviatedName: null,
-  tvCode: null,
-  images: null,
+  crestUrl: null,
 });
 
-describe("toTeamSummary", () => {
+describe("teamSummary", () => {
   it("zamenjuje previše skraćeno ime iz API-ja", () => {
-    expect(toTeamSummary(club("RED", "Crvena")).shortName).toBe("Crvena Zvezda");
+    expect(teamSummary(club("RED", "Crvena")).shortName).toBe("Crvena Zvezda");
   });
 
   it("za nepoznat klub koristi ime iz API-ja", () => {
-    expect(toTeamSummary(club("NEW", "Newcomers")).shortName).toBe("Newcomers");
+    expect(teamSummary(club("NEW", "Newcomers")).shortName).toBe("Newcomers");
   });
 });
