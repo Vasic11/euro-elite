@@ -75,11 +75,12 @@ lib/sync/       API → DB: rows.ts (pure mapping + rules, tested), run.ts (runS
 scripts/        last-sync.mjs (`npm run db:last-sync`)
 drizzle/        generated SQL migrations, committed
 .github/        ci.yml (checks on every push), health.yml (daily /api/health),
-                sync.yml (hourly 18:05–23:05 UTC → /api/cron/sync)
+                sync.yml (manual "Run workflow" → /api/cron/sync),
+                dependabot.yml (weekly npm + actions)
 ```
 
-DB sync: GitHub Actions (`sync.yml`, evenings) and Vercel Cron (`vercel.json`,
-daily ~04:00 UTC, fallback) → `/api/cron/sync` (Bearer `CRON_SECRET`) →
+DB sync: Vercel Schedules (`vercel.json` `schedules`, beta: hourly 18:05–23:05
+UTC and 04:00 UTC, GET, 15 min jitter on Hobby) → `/api/cron/sync` (Bearer `CRON_SECRET`) →
 `runSync()`: upsert clubs, rosters, schedule, then box scores of played games
 that are missing or from the last 3 days, each game in one `db.batch`; then
 `revalidateTag("db", "max")`.
@@ -114,8 +115,10 @@ reason behind something is unclear.
 4. Fantasy corner: next-round projections, best team for a budget
    (knapsack/ILP + captain), transfer tips, schedule difficulty, coaches.
    Prices are not in the official API — find the source first.
-5. Hardening: branch protection on `main`, Dependabot, security headers,
-   rate limit on `/api/health`. Standings tiebreak is not head-to-head yet.
+5. Hardening: **done in `chore/hardening`:** LF via `.gitattributes`, Next
+   16.4.6, Dependabot, security headers (no CSP). Still open: branch protection
+   on `main`, CSP, rate limit on `/api/health`. Standings tiebreak is not
+   head-to-head yet.
 
 ## Which skill or tool to use
 

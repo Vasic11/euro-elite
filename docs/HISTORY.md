@@ -58,6 +58,15 @@ of each section.
 - **Evening sync via GitHub Actions** (`sync.yml`, hourly 18:05–23:05 UTC,
   `concurrency: sync`); `:05` because GitHub delays jobs on the full hour most.
   `/api/health` also fails when the last `ok` sync is older than 36 h.
+- **Sync moved to Vercel Schedules (Nov 2026, `chore/hardening`).** GitHub
+  Actions ran only ~1 of 6 evening syncs per night, so scheduled runs moved to
+  `schedules` in `vercel.json` (beta; Hobby allows every 15 min, always with a
+  15 min jitter): `5 18-23 * * *` and `0 4 * * *`, `requestMethod: "GET"`
+  (path targets default to POST). `crons` was removed in the same change,
+  otherwise the route runs twice. `sync.yml` is now manual only.
+- **Hardening (same PR):** `.gitattributes` forces LF, Next 16.4.6 for the
+  `npm audit --omit=dev` advisories, weekly Dependabot (minor/patch grouped),
+  security headers in `next.config.ts` (no CSP yet).
 
 ## Lessons (avoid repeating)
 

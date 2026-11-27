@@ -22,7 +22,7 @@ function isAuthorized(request: Request): boolean {
 
 /**
  * GET /api/cron/sync: copies the EuroLeague API into the database.
- * Called by Vercel Cron (vercel.json) with `Authorization: Bearer $CRON_SECRET`.
+ * Called by Vercel Schedules (vercel.json, `requestMethod: "GET"`) with `Authorization: Bearer $CRON_SECRET`.
  * 200 for "ok" and "partial" (some box scores skipped, retried next run),
  * 500 if the sync failed.
  */

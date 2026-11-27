@@ -1,19 +1,15 @@
-# Uveče, dok se igraju utakmice, poziva sync svakog sata, pa rezultati stižu na sajt
-# najkasnije sat posle kraja utakmice. Vercel Cron (vercel.json, ~04:00 UTC) ostaje
-# kao rezerva jer Hobby plan dozvoljava samo jedan cron dnevno.
+# Manual sync: the "Run workflow" button in the Actions tab calls /api/cron/sync.
+# Scheduled syncs run on Vercel Schedules (vercel.json): hourly 18:05–23:05 UTC
+# and 04:00 UTC. The GitHub cron was dropped because it skipped most evening runs.
 #
-# Treba secret CRON_SECRET (ista vrednost kao na Vercel-u):
+# Needs the CRON_SECRET secret (same value as on Vercel):
 #   gh secret set CRON_SECRET
-name: Evening sync
+name: Manual sync
 
 on:
-  schedule:
-    # 18:05–23:05 UTC svakog sata (19–00 h po beogradskom zimskom vremenu).
-    # :05, a ne :00, jer GitHub na pun sat ima najveću gužvu i najviše kasni.
-    - cron: "5 18-23 * * *"
-  workflow_dispatch: # dugme "Run workflow" za ručno pokretanje
+  workflow_dispatch:
 
-# Nikad dva sync-a odjednom; novi čeka da se prethodni završi.
+# Never two syncs at once; a new one waits for the previous to finish.
 concurrency:
   group: sync
   cancel-in-progress: false

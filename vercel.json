@@ -1,4 +1,15 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "crons": [{ "path": "/api/cron/sync", "schedule": "0 4 * * *" }]
+  "schedules": {
+    "evening-sync": {
+      "schedule": "5 18-23 * * *",
+      "path": "/api/cron/sync",
+      "requestMethod": "GET"
+    },
+    "nightly-sync": {
+      "schedule": "0 4 * * *",
+      "path": "/api/cron/sync",
+      "requestMethod": "GET"
+    }
+  }
 }
