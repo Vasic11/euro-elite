@@ -9,7 +9,8 @@ import { DEFAULT_REVALIDATE_SECONDS, SEASON_CODE } from "@/lib/euroleague/config
 import { formatPersonName } from "@/lib/euroleague/format";
 import { teamSummary } from "@/lib/euroleague/mappers";
 import type { Position } from "@/lib/euroleague/types";
-import { rowToBoxLine } from "@/lib/sync/rows";
+import type { PlayerGameLine } from "@/lib/stats/boxScore";
+import { rowToBoxLine, rowToDetailedBoxLine } from "@/lib/sync/rows";
 
 import { getDb } from "./client";
 import { clubs, games, people, playerGameStats, rosterStints } from "./schema";
@@ -119,6 +120,67 @@ async function loadSeasonFromDb(): Promise<SeasonData> {
   ]);
   return { clubs: clubList, roster, schedule, boxes };
 }
+
+/**
+ * Every game of one player this season, with every box score column, for the
+ * stat tables. 0-second rows stay in; `statRow` skips them.
+ */
+async function loadPlayerGames(personCode: string): Promise<PlayerGameLine[]> {
+  const home = alias(clubs, "home");
+  const away = alias(clubs, "away");
+  const rows = await getDb()
+    .select({ stats: playerGameStats, game: games, home, away })
+    .from(playerGameStats)
+    .innerJoin(
+      games,
+      and(
+        eq(games.seasonCode, playerGameStats.seasonCode),
+        eq(games.gameCode, playerGameStats.gameCode),
+      ),
+    )
+    .innerJoin(home, eq(home.code, games.homeClubCode))
+    .innerJoin(away, eq(away.code, games.awayClubCode))
+    .where(
+      and(
+        eq(playerGameStats.seasonCode, SEASON_CODE),
+        eq(playerGameStats.personCode, personCode),
+      ),
+    );
+
+  return rows.map(({ stats, game, home, away }) => {
+    const isHome = stats.isHome;
+    const teamScore = isHome ? game.homeScore : game.awayScore;
+    const opponentScore = isHome ? game.awayScore : game.homeScore;
+    const opponent = isHome ? away : home;
+    return {
+      gameCode: game.gameCode,
+      round: game.round,
+      date: game.utcDate.toISOString(),
+      team: teamSummary(isHome ? home : away),
+      opponent: teamSummary(opponent),
+      opponentTvCode: opponent.tvCode || opponent.code,
+      isHome,
+      teamScore,
+      opponentScore,
+      won: teamScore > opponentScore,
+      line: rowToDetailedBoxLine(stats),
+    };
+  });
+}
+
+/**
+ * One small cache entry per player (the code is part of the key), so the
+ * detailed columns never land in the season entry and its 2 MB limit. Same tag
+ * as the season, so a sync refreshes both.
+ */
+export const getPlayerGamesFromDb = unstable_cache(
+  loadPlayerGames,
+  ["player-games", SEASON_CODE],
+  {
+    revalidate: DEFAULT_REVALIDATE_SECONDS,
+    tags: [DB_CACHE_TAG],
+  },
+);
 
 /**
  * The whole season from the database as ONE cache entry: ~430 pages render

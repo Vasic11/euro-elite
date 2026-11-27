@@ -68,6 +68,29 @@ of each section.
   `npm audit --omit=dev` advisories, weekly Dependabot (minor/patch grouped),
   security headers in `next.config.ts` (no CSP yet).
 
+## Known risks
+
+- **The season cache entry outgrows Next's 2 MB limit mid-season** (measured
+  27 Nov 2026, `feat/stat-tables`). `unstable_cache` stores its result as a
+  fetch-cache entry, and Next refuses to cache an entry whose
+  `JSON.stringify` is over 2 MB (`server/lib/incremental-cache`): in
+  production it only logs a warning, so every render would silently query
+  Neon; in dev it throws. The body is a JSON string inside JSON, so quotes
+  count twice. Measured: 1.30 MB after 140 games (0.41 MB without box scores,
+  ~6.7 KB per game, ~24 lines per game). The season has 38 rounds (380 RS
+  games) + up to ~30 play-in/playoff/Final Four games, so ~3.0 MB at the end;
+  the limit is crossed around game 249 (round ~25, early 2027). The new
+  box-score fields from `feat/stat-tables` are **not** added to this entry
+  (they would make it ~4.1 MB); the stat tables read a separate per-player
+  cache instead.
+- **Proposed fix (own PR, before round ~22):** keep box-score lines out of
+  the season entry. Compute per-player season aggregates in SQL
+  (`GROUP BY person_code, club_code` with `seconds > 0` for averages, plus
+  squad appearances and last-game squads for `missedLastGame`) and cache that
+  instead of raw lines; pages that need lines (form, game log) use the
+  per-player cache. The entry then stays ~0.5 MB all season. A compact
+  encoding (arrays instead of objects) would only delay the problem.
+
 ## Lessons (avoid repeating)
 
 - Telling the owner to `git stash drop` lost work once (recovered with
