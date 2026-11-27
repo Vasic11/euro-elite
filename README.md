@@ -73,7 +73,7 @@ lib/db/                       baza (Neon Postgres, Drizzle)
 lib/sync/                     sync API -> baza
   rows.ts                     čisto mapiranje API -> red baze i pravila šta se sinhronizuje (testovi)
   run.ts                      runSync(): klubovi, rosteri, raspored, box score-ovi
-app/api/cron/sync/route.ts    GET, zaštićen sa CRON_SECRET; poziva ga Vercel Cron i GitHub Actions
+app/api/cron/sync/route.ts    GET, zaštićen sa CRON_SECRET; poziva ga Vercel Schedules (i ručni workflow)
 scripts/last-sync.mjs         npm run db:last-sync
 drizzle/                      SQL migracije (generiše ih drizzle-kit, idu u git)
 ```
@@ -111,10 +111,10 @@ svaka svoje upite. Zapis se osvežava na sat, i odmah posle svakog uspešnog syn
   score po igraču po utakmici (2FG/3FG/FT, OREB/DREB, AST, STL, TO, BLK za i
   protiv, faulovi napravljeni i dobijeni, +/-, PIR, sekunde). Čuvamo brojeve, a
   procente i proseke računamo (proseci samo iz utakmica sa `seconds > 0`).
-- **Kad:** uveče svakog sata 18:05–23:05 UTC preko GitHub Actions
-  (`.github/workflows/sync.yml`, secret `CRON_SECRET`), pa rezultat stiže najkasnije
-  sat posle utakmice. Vercel Cron oko 04:00 UTC (`vercel.json`) ostaje kao rezerva;
-  na Hobby planu ne može češće od jednom dnevno.
+- **Kad:** Vercel Schedules (`vercel.json`, beta): uveče svakog sata 18:05–23:05
+  UTC i jednom u 04:00 UTC, `GET` sa `Authorization: Bearer $CRON_SECRET`. Na Hobby
+  planu svako pokretanje kreće u prozoru od 15 min posle zadatog vremena. Ručno:
+  dugme "Run workflow" u `.github/workflows/sync.yml` (secret `CRON_SECRET`).
 - **Health:** `/api/health` vraća 503 i kad poslednji `ok` sync nije mlađi od 36 h.
   Iz terminala: `npm run db:last-sync`.
 - **Šta radi:** upsert klubova, rostera i rasporeda, pa box score za odigrane
@@ -135,7 +135,7 @@ svaka svoje upite. Zapis se osvežava na sat, i odmah posle svakog uspešnog syn
 - [x] Forma: PIR po kolima, prozor 3/5/10, poređenje sa sezonom
 - [x] Tabela lige, rezultati i raspored po klubu
 - [x] Baza + noćna sinhronizacija (istorija, transferi)
-- [x] Sajt čita iz baze; češći sync uveče (GitHub Actions)
+- [x] Sajt čita iz baze; češći sync uveče (Vercel Schedules)
 - [ ] Fantasy: optimalan tim za zadati budžet
 
 ## Forma
