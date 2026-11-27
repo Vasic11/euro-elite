@@ -8,6 +8,11 @@ import { PlayerForm, PlayerFormSkeleton } from "@/components/players/form/Player
 import { MissedGameBadge } from "@/components/players/MissedGameBadge";
 import { PlayerPanel } from "@/components/players/PlayerPanel";
 import { RadarChart } from "@/components/players/RadarChart";
+import {
+  PlayerGameLog,
+  PlayerSeasonStats,
+  StatsSkeleton,
+} from "@/components/players/stats/PlayerStats";
 import { StatTile } from "@/components/ui/StatTile";
 import { BackLink } from "@/components/ui/BackLink";
 import { ContextBackLink } from "@/components/ui/ContextBackLink";
@@ -166,8 +171,16 @@ export default async function PlayerPage({ params }: Props) {
             </dl>
           </section>
 
+          <Suspense fallback={<StatsSkeleton label="Loading season stats" />}>
+            <PlayerSeasonStats code={player.code} />
+          </Suspense>
+
           <Suspense fallback={<PlayerFormSkeleton />}>
             <PlayerForm code={player.code} seasonPir={averages.pir} />
+          </Suspense>
+
+          <Suspense fallback={<StatsSkeleton label="Loading game log" />}>
+            <PlayerGameLog code={player.code} />
           </Suspense>
         </>
       )}
