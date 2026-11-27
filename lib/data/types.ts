@@ -4,9 +4,10 @@
  * the domain types from lib/euroleague/types.ts.
  */
 import type { BoxLine, GameBox, ScheduledGame } from "@/lib/stats/aggregate";
+import type { DetailedBoxLine, PlayerGameLine } from "@/lib/stats/boxScore";
 import type { Position, TeamSummary } from "@/lib/euroleague/types";
 
-export type { BoxLine, GameBox, ScheduledGame };
+export type { BoxLine, DetailedBoxLine, GameBox, PlayerGameLine, ScheduledGame };
 
 /** One contract between a person and a club, already mapped to display values. */
 export type RosterEntry = {

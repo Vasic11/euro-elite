@@ -16,6 +16,7 @@ import {
   partialsToArray,
   rosterRows,
   rowToBoxLine,
+  rowToDetailedBoxLine,
   toGameRow,
 } from "./rows";
 
@@ -319,6 +320,28 @@ describe("averages from stored rows (rowToBoxLine + averagesFromLines)", () => {
     expect(averages?.games).toBe(2);
     expect(averages?.points).toBe(15); // (10 + 20) / 2, not / 3
     expect(averages?.minutes).toBe(25); // (20 + 30) min / 2
+  });
+
+  it("maps every box score column for the stat tables (rowToDetailedBoxLine)", () => {
+    const box: SyncBoxScoreDto = {
+      local: { players: [boxPlayer("A", 1686, 18)] },
+      road: { players: [] },
+    };
+    const line = rowToDetailedBoxLine(boxScoreRows(SEASON, game, box).stats[0]);
+    expect(line).toMatchObject({
+      playerCode: "A",
+      teamCode: "PAR",
+      seconds: 1686,
+      points: 18,
+      offRebounds: 1,
+      defRebounds: 4,
+      rebounds: 5,
+      blocks: 1,
+      blocksAgainst: 0,
+      foulsCommitted: 3,
+      foulsDrawn: 4,
+      plusMinus: -2,
+    });
   });
 
   it("returns null when every stored game has 0 seconds", () => {

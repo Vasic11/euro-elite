@@ -18,6 +18,7 @@ import type {
   SyncScheduleGameDto,
 } from "@/lib/euroleague/schemas";
 import type { BoxLine } from "@/lib/stats/aggregate";
+import type { DetailedBoxLine } from "@/lib/stats/boxScore";
 
 /** How many days back the sync re-fetches box scores, in case the league corrects stats. */
 export const RECENT_BOX_SCORE_DAYS = 3;
@@ -285,5 +286,29 @@ export function rowToBoxLine(row: StoredStatsLine): BoxLine {
     blocks: row.blk,
     turnovers: row.tov,
     pir: row.pir,
+  };
+}
+
+/** The extra columns the stat tables read on top of `StoredStatsLine`. */
+export type StoredDetailedStatsLine = StoredStatsLine &
+  Pick<
+    PlayerGameStatsRow,
+    "oreb" | "dreb" | "blkAgainst" | "foulsCommitted" | "foulsDrawn" | "plusMinus"
+  >;
+
+/**
+ * A stored stats row with every box score column, for the player stat tables.
+ * Separate from `rowToBoxLine` so the season cache entry does not grow (see
+ * "Known risks" in docs/HISTORY.md).
+ */
+export function rowToDetailedBoxLine(row: StoredDetailedStatsLine): DetailedBoxLine {
+  return {
+    ...rowToBoxLine(row),
+    offRebounds: row.oreb,
+    defRebounds: row.dreb,
+    blocksAgainst: row.blkAgainst,
+    foulsCommitted: row.foulsCommitted,
+    foulsDrawn: row.foulsDrawn,
+    plusMinus: row.plusMinus,
   };
 }

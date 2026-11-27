@@ -63,12 +63,12 @@ lib/euroleague/               sve što zna za EuroLeague API (koriste ga sync i 
   mappers.ts                  imena kluba -> TeamSummary (kratka imena)
   format.ts                   formatiranje imena, brojeva, godina
 
-lib/stats/                    proseci, forma, tabela, lideri (čiste funkcije, testovi)
+lib/stats/                    proseci, forma, tabela, lideri, detaljne tabele igrača (čiste funkcije, testovi)
 
 lib/db/                       baza (Neon Postgres, Drizzle)
   schema.ts                   tabele: clubs, people, roster_stints, games, player_game_stats, sync_runs
   client.ts                   getDb() preko Neon HTTP drajvera (pooled konekcija)
-  queries.ts                  cela sezona iz baze kao jedan keširan zapis (tag "db")
+  queries.ts                  cela sezona kao jedan keširan zapis + sve utakmice jednog igrača (zapis po igraču), tag "db"
   health.ts                   provera: poslednji ok sync mlađi od 36 h
 lib/sync/                     sync API -> baza
   rows.ts                     čisto mapiranje API -> red baze i pravila šta se sinhronizuje (testovi)
@@ -78,7 +78,7 @@ scripts/last-sync.mjs         npm run db:last-sync
 drizzle/                      SQL migracije (generiše ih drizzle-kit, idu u git)
 ```
 
-**Tok podataka:** EuroLeague API → sync (`lib/sync`, Zod validacija) → Neon baza → `lib/db/queries.ts` (jedan keširan zapis za celu sezonu) → `lib/data` (pretvaranje u naš model) → serverska stranica → klijentske komponente samo za interakciju (filteri, accordion, animacije).
+**Tok podataka:** EuroLeague API → sync (`lib/sync`, Zod validacija) → Neon baza → `lib/db/queries.ts` (jedan keširan zapis za celu sezonu; detaljne tabele igrača čitaju poseban mali zapis po igraču) → `lib/data` (pretvaranje u naš model) → serverska stranica → klijentske komponente samo za interakciju (filteri, accordion, animacije).
 
 **Pravila:**
 

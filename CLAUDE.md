@@ -86,7 +86,8 @@ that are missing or from the last 3 days, each game in one `db.batch`; then
 `revalidateTag("db", "max")`.
 
 Data flow: API → sync → Neon → `lib/db/queries.ts` (`getSeasonFromDb`: the
-whole season as ONE `unstable_cache` entry, tag `"db"`) → `lib/data/*`
+whole season as ONE `unstable_cache` entry, tag `"db"`; stat tables read a
+small per-player entry, `getPlayerGamesFromDb`) → `lib/data/*`
 (`assemble.ts` builds `Player`/`Team` with `lib/stats`) → server page → client
 components only where state/animation is needed. Components never use raw API
 or DB shapes. Rendering: ISR, pages revalidate every 1h and right after a sync.
