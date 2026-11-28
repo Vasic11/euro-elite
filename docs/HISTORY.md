@@ -67,29 +67,35 @@ of each section.
 - **Hardening (same PR):** `.gitattributes` forces LF, Next 16.4.6 for the
   `npm audit --omit=dev` advisories, weekly Dependabot (minor/patch grouped),
   security headers in `next.config.ts` (no CSP yet).
+- **Season cache without raw box lines (28 Nov 2026, `perf/season-cache`).**
+  The season entry held every box score line and would have crossed Next's
+  2 MB cache limit around game ~249 (round ~25): in production Next only logs
+  a warning and every render would query Neon. Now Postgres sums
+  per `(person_code, club_code)` (`count`/`sum … FILTER (WHERE seconds > 0)`,
+  plus all squad games) and the entry holds those totals plus, per club, its
+  games and the squad of its latest game (for "missed last game"). Division
+  (averages, percentages) stays in JS (`averagesFromTotals`): integer sums are
+  exact either way, so the numbers are bit-for-bit the same. The form/game
+  log reads the per-player entry the stat tables already used. The squad rule
+  lives once in `squadsFrom`, used by both the DB and the JS reference
+  (`teamSquads`). Cache key bumped to `season-db-v2`.
+  - Measured with `JSON.stringify` of the entry twice (Next stores the body
+    as a JSON string inside JSON), after 140 games: **1.68 MB → 0.62 MB**
+    (raw 1.18 → 0.45 MB). Box lines were 0.81 MB raw; totals are 84 KB.
+  - End of season (380 RS + ~30 playoff games): the schedule already lists
+    all 380 RS games, so only playoff games, signings and transfers add to it:
+    **~0.65–0.7 MB**, flat instead of growing ~6.7 KB per game. The largest
+    per-player entry is 16.5 KB for 14 games (~55 KB at the end).
+  - Verified like PR 2, with a temporary dev route: old path (raw lines) vs
+    new (SQL totals) over 140 games and 3350 lines — 0 differences for 344
+    players (averages, order, `missedLastGame`; 2 transferred), 20 teams and
+    the game log of 321 players (3148 entries).
 
 ## Known risks
 
-- **The season cache entry outgrows Next's 2 MB limit mid-season** (measured
-  27 Nov 2026, `feat/stat-tables`). `unstable_cache` stores its result as a
-  fetch-cache entry, and Next refuses to cache an entry whose
-  `JSON.stringify` is over 2 MB (`server/lib/incremental-cache`): in
-  production it only logs a warning, so every render would silently query
-  Neon; in dev it throws. The body is a JSON string inside JSON, so quotes
-  count twice. Measured: 1.30 MB after 140 games (0.41 MB without box scores,
-  ~6.7 KB per game, ~24 lines per game). The season has 38 rounds (380 RS
-  games) + up to ~30 play-in/playoff/Final Four games, so ~3.0 MB at the end;
-  the limit is crossed around game 249 (round ~25, early 2027). The new
-  box-score fields from `feat/stat-tables` are **not** added to this entry
-  (they would make it ~4.1 MB); the stat tables read a separate per-player
-  cache instead.
-- **Proposed fix (own PR, before round ~22):** keep box-score lines out of
-  the season entry. Compute per-player season aggregates in SQL
-  (`GROUP BY person_code, club_code` with `seconds > 0` for averages, plus
-  squad appearances and last-game squads for `missedLastGame`) and cache that
-  instead of raw lines; pages that need lines (form, game log) use the
-  per-player cache. The entry then stays ~0.5 MB all season. A compact
-  encoding (arrays instead of objects) would only delay the problem.
+- Solved: the season cache entry outgrowing Next's 2 MB limit
+  (`perf/season-cache`, see Decisions). Re-measure if something large is
+  added to `SeasonData`; anything per game belongs in the per-player entry.
 
 ## Lessons (avoid repeating)
 

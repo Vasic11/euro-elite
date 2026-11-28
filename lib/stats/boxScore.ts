@@ -3,7 +3,7 @@
  * season totals, per-game averages, shooting percentages and mm:ss minutes.
  * Pure functions, no API, DB or React.
  */
-import type { TeamSummary } from "@/lib/euroleague/types";
+import type { GameLogEntry, TeamSummary } from "@/lib/euroleague/types";
 
 import type { BoxLine } from "./aggregate";
 
@@ -150,4 +150,34 @@ export function formatMinutes(seconds: number): string {
   const mm = Math.floor(whole / 60);
   const ss = whole % 60;
   return `${mm}:${String(ss).padStart(2, "0")}`;
+}
+
+/**
+ * The form section's game log: games he got on the court (0-second games are
+ * squad-only), by round. Same games and numbers as the stat tables, read from
+ * the per-player cache instead of the season entry.
+ */
+export function gameLogFromGames(games: PlayerGameLine[]): GameLogEntry[] {
+  return games
+    .filter((g) => g.line.seconds > 0)
+    .map(({ line, ...g }): GameLogEntry => ({
+      gameCode: g.gameCode,
+      round: g.round,
+      date: g.date,
+      opponent: g.opponent,
+      isHome: g.isHome,
+      teamScore: g.teamScore,
+      opponentScore: g.opponentScore,
+      won: g.won,
+      started: line.started,
+      minutes: line.seconds / 60,
+      points: line.points,
+      rebounds: line.rebounds,
+      assists: line.assists,
+      steals: line.steals,
+      blocks: line.blocks,
+      turnovers: line.turnovers,
+      pir: line.pir,
+    }))
+    .sort((a, b) => a.round - b.round);
 }

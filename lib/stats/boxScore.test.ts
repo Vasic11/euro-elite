@@ -5,6 +5,7 @@ import type { TeamSummary } from "@/lib/euroleague/types";
 import {
   type DetailedBoxLine,
   formatMinutes,
+  gameLogFromGames,
   type PlayerGameLine,
   seasonRows,
   shootingPct,
@@ -162,5 +163,16 @@ describe("formatMinutes", () => {
 
   it("keeps counting minutes past an hour for season totals", () => {
     expect(formatMinutes(24725)).toBe("412:05");
+  });
+});
+
+describe("gameLogFromGames", () => {
+  it("skips 0-second games and sorts by round", () => {
+    const later = { ...game("2026-10-20", "AAA", { pir: 9 }), round: 3 };
+    const dnp = { ...game("2026-10-13", "AAA", { seconds: 0 }), round: 2 };
+    const first = { ...game("2026-10-06", "AAA", { seconds: 1500, pir: 18 }), round: 1 };
+    const log = gameLogFromGames([later, dnp, first]);
+    expect(log.map((e) => e.round)).toEqual([1, 3]);
+    expect(log[0]).toMatchObject({ minutes: 25, pir: 18, opponent: team("OPP") });
   });
 });

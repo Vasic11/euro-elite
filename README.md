@@ -101,9 +101,12 @@ Zvanični EuroLeague API (`api-live.euroleague.net`). Sajt ga ne čita direktno:
 
 ## Baza i sync
 
-Stranice čitaju bazu. Cela sezona (klubovi, rosteri, raspored, box score-ovi) se
-čita u jedan zapis keša (`lib/db/queries.ts`, tag `"db"`), pa ~430 stranica ne šalje
-svaka svoje upite. Zapis se osvežava na sat, i odmah posle svakog uspešnog sync-a
+Stranice čitaju bazu. Cela sezona (klubovi, rosteri, raspored, zbirovi po igraču i
+klubu izračunati u SQL-u, sastavi timova na poslednjoj utakmici) se čita u jedan
+zapis keša (`lib/db/queries.ts`, tag `"db"`), pa ~430 stranica ne šalje svaka svoje
+upite. Sirove box linije nisu u tom zapisu (Next ne kešira zapis veći od 2 MB);
+forma, game log i tabele statistike čitaju mali zapis po igraču
+(`getPlayerGamesFromDb`). Zapis se osvežava na sat, i odmah posle svakog uspešnog sync-a
 (`revalidateTag`): sledeći posetilac još dobije staru stranicu, a nova se pravi u pozadini.
 
 - **Šta se čuva:** klubovi, osobe (igrači i treneri), ugovori klub–osoba po
@@ -145,7 +148,7 @@ Prosek PIR-a u poslednjih N odigranih utakmica (podrazumevano 5) poredi se sa pr
 ## Odakle dolaze brojke
 
 - **Roster i treneri** se uzimaju klub po klub. Endpoint za celu sezonu vraća samo jednu stranicu rezultata i preskače igrače.
-- **Proseci i forma** se računaju iz box score-a svake odigrane utakmice (`lib/stats/aggregate.ts`). Endpoint sa gotovim prosecima izostavlja neke igrače koji su igrali.
+- **Proseci i forma** se računaju iz box score-a svake odigrane utakmice: zbirove sabira baza, a proseke i procente `lib/stats/aggregate.ts`. Endpoint sa gotovim prosecima izostavlja neke igrače koji su igrali.
 - **„Missed last game“**: stalni član sastava (bio u sastavu na bar pola utakmica tima) koji nije bio u sastavu od 12 igrača na poslednjoj utakmici. Igrači sa kraja klupe se ne označavaju. API ne kaže razlog (povreda, bolest, odluka trenera), pa ne pišemo „povređen“.
 - **Boje klubova** API ne vraća; ručno su upisane u `lib/euroleague/clubColors.ts`.
 

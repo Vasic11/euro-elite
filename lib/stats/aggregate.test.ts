@@ -4,13 +4,15 @@ import type { TeamSummary } from "@/lib/euroleague/types";
 
 import {
   averagesFromLines,
+  averagesFromTotals,
   type BoxLine,
-  gameLogFor,
   type GameBox,
-  lastGameSquads,
   playersWhoMissedLastGame,
   type ScheduledGame,
+  squadsFrom,
   teamRecord,
+  teamSquads,
+  totalsFromLines,
 } from "./aggregate";
 
 const team = (code: string): TeamSummary => ({
@@ -92,29 +94,65 @@ describe("averagesFromLines", () => {
   });
 });
 
-describe("gameLogFor", () => {
-  it("gleda utakmicu iz ugla igračevog tima", () => {
-    const games = [game(1, 1, "ZAL", "RED", 80, 90)];
-    const boxes: GameBox[] = [{ gameCode: 1, lines: [line("p", "RED", { pir: 18 })] }];
-    const [entry] = gameLogFor("p", games, boxes);
-    expect(entry.isHome).toBe(false);
-    expect(entry.opponent.code).toBe("ZAL");
-    expect(entry.teamScore).toBe(90);
-    expect(entry.won).toBe(true);
-    expect(entry.pir).toBe(18);
+describe("totalsFromLines", () => {
+  it("counts 0-second games as squad games but not in the sums", () => {
+    const [t] = totalsFromLines([
+      line("a", "T", { pir: 10 }),
+      line("a", "T", { seconds: 0, pir: -1 }),
+    ]);
+    expect(t).toMatchObject({ squadGames: 2, games: 1, seconds: 1200, pir: 10 });
+  });
+
+  it("keeps one row per club after a transfer", () => {
+    const totals = totalsFromLines([
+      line("a", "PAR"),
+      line("a", "RED"),
+      line("a", "RED"),
+    ]);
+    expect(totals.map((t) => [t.teamCode, t.games])).toEqual([
+      ["PAR", 1],
+      ["RED", 2],
+    ]);
   });
 });
 
-describe("lastGameSquads", () => {
+describe("averagesFromTotals", () => {
+  it("averages a transferred player over all his clubs", () => {
+    const totals = totalsFromLines([
+      line("a", "PAR", { pir: 30 }),
+      line("a", "RED", { pir: 0 }),
+      line("a", "RED", { pir: 0 }),
+    ]);
+    expect(averagesFromTotals(totals)).toMatchObject({ games: 3, pir: 10 });
+  });
+});
+
+describe("teamSquads", () => {
   it("uzima sastav sa poslednje odigrane utakmice tima", () => {
     const games = [game(1, 1, "RED", "ZAL", 80, 70), game(2, 2, "PAR", "RED", 75, 85)];
     const boxes: GameBox[] = [
       { gameCode: 1, lines: [line("a", "RED"), line("b", "RED")] },
       { gameCode: 2, lines: [line("a", "RED"), line("x", "PAR")] },
     ];
-    const squads = lastGameSquads(games, boxes);
-    expect([...squads.get("RED")!]).toEqual(["a"]); // "b" je propustio kolo 2
-    expect([...squads.get("ZAL")!]).toEqual([]);
+    const squads = new Map(teamSquads(games, boxes).map((s) => [s.teamCode, s]));
+    expect(squads.get("RED")).toEqual({ teamCode: "RED", games: 2, lastSquad: ["a"] });
+    expect(squads.get("ZAL")).toEqual({ teamCode: "ZAL", games: 0, lastSquad: [] });
+  });
+
+  it("ignores lines of games that are not a team's latest", () => {
+    const games = [game(1, 1, "RED", "ZAL", 80, 70), game(2, 2, "RED", "PAR", 75, 85)];
+    const squads = squadsFrom(
+      games,
+      [
+        { gameCode: 1, teamCode: "RED" },
+        { gameCode: 2, teamCode: "RED" },
+      ],
+      [
+        { gameCode: 1, teamCode: "RED", playerCode: "old" },
+        { gameCode: 2, teamCode: "RED", playerCode: "new" },
+      ],
+    );
+    expect(squads.find((s) => s.teamCode === "RED")?.lastSquad).toEqual(["new"]);
   });
 });
 
@@ -135,6 +173,11 @@ describe("playersWhoMissedLastGame", () => {
     game(2, 2, "PAR", "RED", 75, 85),
     game(3, 3, "RED", "OLY", 90, 80),
   ];
+  const missed = (boxes: GameBox[]) =>
+    playersWhoMissedLastGame(
+      totalsFromLines(boxes.flatMap((b) => b.lines)),
+      teamSquads(games, boxes),
+    );
 
   it("označava stalnog člana sastava koji nije bio na poslednjoj utakmici", () => {
     const boxes: GameBox[] = [
@@ -142,7 +185,7 @@ describe("playersWhoMissedLastGame", () => {
       { gameCode: 2, lines: [line("starter", "RED"), line("hurt", "RED")] },
       { gameCode: 3, lines: [line("starter", "RED")] },
     ];
-    expect([...playersWhoMissedLastGame(games, boxes)]).toEqual(["hurt"]);
+    expect([...missed(boxes)]).toEqual(["hurt"]);
   });
 
   it("ne označava igrača sa kraja klupe koji je retko u sastavu", () => {
@@ -152,6 +195,14 @@ describe("playersWhoMissedLastGame", () => {
       { gameCode: 2, lines: [line("starter", "RED")] },
       { gameCode: 3, lines: [line("starter", "RED")] },
     ];
-    expect(playersWhoMissedLastGame(games, boxes).size).toBe(0);
+    expect(missed(boxes).size).toBe(0);
+  });
+
+  it("does not flag anyone on a team without a latest game", () => {
+    const totals = totalsFromLines([line("a", "RED")]);
+    expect(
+      playersWhoMissedLastGame(totals, [{ teamCode: "RED", games: 1, lastSquad: null }])
+        .size,
+    ).toBe(0);
   });
 });
