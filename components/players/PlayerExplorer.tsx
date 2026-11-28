@@ -22,6 +22,18 @@ const POSITION_OPTIONS: { value: Position | "all"; label: string }[] = [
   { value: "Center", label: "Centers" },
 ];
 
+type Show = "all" | "transferred" | "out";
+
+const SHOW_OPTIONS: { value: Show; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "transferred", label: "Transferred" },
+  { value: "out", label: "Out" },
+];
+
+const matchesShow = (p: Player, show: Show) =>
+  show === "all" ||
+  (show === "transferred" ? p.previousClub !== null : p.outSince !== null);
+
 const SORT_OPTIONS: { value: SortKey; label: string }[] = [
   { value: "pir", label: "PIR" },
   { value: "points", label: "PTS" },
@@ -40,6 +52,7 @@ export function PlayerExplorer({ players }: { players: Player[] }) {
   const [position, setPosition] = useState<Position | "all">("all");
   const [nation, setNation] = useState("all");
   const [sort, setSort] = useState<SortKey>("pir");
+  const [show, setShow] = useState<Show>("all");
 
   // Kucanje ostaje glatko: input se ažurira odmah, a filtriranje kad React stigne.
   const deferredQuery = useDeferredValue(query);
@@ -60,16 +73,17 @@ export function PlayerExplorer({ players }: { players: Player[] }) {
         (p) =>
           (position === "all" || p.position === position) &&
           (nation === "all" || p.country === nation) &&
+          matchesShow(p, show) &&
           (q === "" ||
             normalizeForSearch(p.name).includes(q) ||
             normalizeForSearch(p.team.name).includes(q)),
       )
       .toSorted((a, b) => (b.averages?.[sort] ?? -1) - (a.averages?.[sort] ?? -1));
-  }, [players, deferredQuery, position, nation, sort]);
+  }, [players, deferredQuery, position, nation, sort, show]);
 
   // Broj prikazanih kartica se vraća na PAGE_SIZE čim se promeni filter.
   // Umesto useEffect-a pamtimo za koji filter važi limit (nema dodatnog renderovanja).
-  const filterKey = `${deferredQuery}|${position}|${nation}|${sort}`;
+  const filterKey = `${deferredQuery}|${position}|${nation}|${sort}|${show}`;
   const [paging, setPaging] = useState({ key: filterKey, limit: PAGE_SIZE });
   const limit = paging.key === filterKey ? paging.limit : PAGE_SIZE;
   const shown = visible.slice(0, limit);
@@ -117,6 +131,12 @@ export function PlayerExplorer({ players }: { players: Player[] }) {
             value={nation}
             options={nationOptions}
             onChange={setNation}
+          />
+          <Segmented
+            label="Show"
+            value={show}
+            options={SHOW_OPTIONS}
+            onChange={setShow}
           />
           <Segmented
             label="Sort by"

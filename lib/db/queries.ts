@@ -59,6 +59,7 @@ async function loadRoster(): Promise<RosterEntry[]> {
     role: stint.role,
     active: stint.active,
     startDate: stint.startDate?.getTime() ?? null,
+    endDate: stint.endDate?.getTime() ?? null,
     club: teamSummary(club),
     personCode: person.code,
     name: formatPersonName(person.name),
@@ -111,12 +112,14 @@ const sumOnCourt = (column: AnyPgColumn) =>
  * `averagesFromTotals`, so the numbers are the same as from raw lines.
  */
 async function loadTotals(): Promise<PlayerClubTotals[]> {
-  return getDb()
+  const rows = await getDb()
     .select({
       playerCode: stats.personCode,
       teamCode: stats.clubCode,
       squadGames: sql<number>`(count(*))::int`,
       games: sql<number>`(count(*) filter (where ${onCourt}))::int`,
+      // mapWith: parse it like the column itself (a Date), not as the raw driver string.
+      lastSquadDate: sql<Date>`max(${games.utcDate})`.mapWith(games.utcDate),
       seconds: sumOnCourt(stats.seconds),
       points: sumOnCourt(stats.points),
       twoMade: sumOnCourt(stats.fg2Made),
@@ -133,8 +136,14 @@ async function loadTotals(): Promise<PlayerClubTotals[]> {
       pir: sumOnCourt(stats.pir),
     })
     .from(stats)
+    .innerJoin(
+      games,
+      and(eq(games.seasonCode, stats.seasonCode), eq(games.gameCode, stats.gameCode)),
+    )
     .where(thisSeason)
     .groupBy(stats.personCode, stats.clubCode);
+  // Same ISO form as the schedule dates ("…Z"), so the two compare as strings.
+  return rows.map((r) => ({ ...r, lastSquadDate: r.lastSquadDate.toISOString() }));
 }
 
 /**
@@ -248,8 +257,9 @@ export const getPlayerGamesFromDb = unstable_cache(
 export const getSeasonFromDb = unstable_cache(
   loadSeasonFromDb,
   // Bumped whenever SeasonData changes shape, so an entry of the old shape is
-  // never read after a deploy (v2: totals instead of lines, v3: squad dates).
-  ["season-db-v3", SEASON_CODE],
+  // never read after a deploy (v2: totals instead of lines, v3: squad dates,
+  // v4: stint end dates and last squad date per player and club).
+  ["season-db-v4", SEASON_CODE],
   {
     revalidate: DEFAULT_REVALIDATE_SECONDS,
     tags: [DB_CACHE_TAG],

@@ -55,6 +55,8 @@ export type PlayerClubTotals = {
   squadGames: number;
   /** Utakmice na kojima je ušao u igru (seconds > 0); zbirovi ispod su samo za njih. */
   games: number;
+  /** ISO datum poslednje utakmice u sastavu za ovaj klub (i sa 0 sekundi), za "Out since". */
+  lastSquadDate: string | null;
   seconds: number;
   points: number;
   twoMade: number;
@@ -93,8 +95,13 @@ type Sums = Record<(typeof SUMMED)[number], number>;
 
 const zeroSums = (): Sums => Object.fromEntries(SUMMED.map((k) => [k, 0])) as Sums;
 
-/** Box linije sabrane po (igrač, klub); zbirovi samo iz utakmica sa seconds > 0. */
-export function totalsFromLines(lines: BoxLine[]): PlayerClubTotals[] {
+/**
+ * Box linije sabrane po (igrač, klub); zbirovi samo iz utakmica sa seconds > 0.
+ * `date` (ISO datum utakmice) je opcion: bez njega `lastSquadDate` ostaje null.
+ */
+export function totalsFromLines(
+  lines: (BoxLine & { date?: string })[],
+): PlayerClubTotals[] {
   const byKey = new Map<string, PlayerClubTotals>();
   for (const l of lines) {
     const key = `${l.teamCode}:${l.playerCode}`;
@@ -105,11 +112,15 @@ export function totalsFromLines(lines: BoxLine[]): PlayerClubTotals[] {
         teamCode: l.teamCode,
         squadGames: 0,
         games: 0,
+        lastSquadDate: null,
         ...zeroSums(),
       };
       byKey.set(key, t);
     }
     t.squadGames++;
+    if (l.date && (t.lastSquadDate === null || l.date > t.lastSquadDate)) {
+      t.lastSquadDate = l.date;
+    }
     if (l.seconds <= 0) continue;
     t.games++;
     for (const k of SUMMED) t[k] += l[k];
@@ -287,4 +298,42 @@ export function playersWhoMissedLastGame(
     if (regular && !squad.lastSquad.includes(t.playerCode)) missed.add(t.playerCode);
   }
   return missed;
+}
+
+/** Koliko uzastopnih utakmica sadašnjeg kluba igrač mora da propusti za "Out since". */
+export const OUT_MIN_GAMES = 3;
+
+/**
+ * Igrači koji su duže van sastava, sa datumom prve propuštene utakmice (ISO).
+ * Pravilo, samo za SADAŠNJI klub (u sastavu = u box score-u, i sa 0 sekundi):
+ * 1. bar jednom je bio u sastavu tog kluba (inače ne znamo ništa o njemu);
+ * 2. klub je posle toga odigrao ≥ OUT_MIN_GAMES utakmica i ni na jednoj ga nema
+ *    (sve posle poslednjeg nastupa, pa su po definiciji uzastopne);
+ * 3. do izostanka je bio stalni: u sastavu na ≥ pola utakmica kluba od početka
+ *    ugovora do poslednjeg nastupa (isti prag kao `playersWhoMissedLastGame`).
+ */
+export function playersOutSince(
+  totals: PlayerClubTotals[],
+  squads: TeamSquad[],
+  current: ReadonlyMap<string, CurrentClub>,
+): Map<string, string> {
+  const byTeam = new Map(squads.map((s) => [s.teamCode, s]));
+  const out = new Map<string, string>();
+  for (const t of totals) {
+    const club = current.get(t.playerCode);
+    if (club?.teamCode !== t.teamCode || t.lastSquadDate === null) continue;
+    const squad = byTeam.get(t.teamCode);
+    if (!squad) continue;
+
+    const since = club.since ?? -Infinity;
+    const last = Date.parse(t.lastSquadDate);
+    const sinceContract = squad.gameDates.filter((date) => Date.parse(date) >= since);
+    const missedGames = sinceContract.filter((date) => Date.parse(date) > last);
+    if (missedGames.length < OUT_MIN_GAMES) continue;
+
+    const beforeAbsence = sinceContract.length - missedGames.length;
+    if (t.squadGames >= Math.ceil(beforeAbsence / 2))
+      out.set(t.playerCode, missedGames[0]);
+  }
+  return out;
 }

@@ -8,6 +8,7 @@ import {
   averagesFromTotals,
   type BoxLine,
   type GameBox,
+  playersOutSince,
   playersWhoMissedLastGame,
   type ScheduledGame,
   squadsFrom,
@@ -289,5 +290,80 @@ describe("playersWhoMissedLastGame", () => {
     expect(playersWhoMissedLastGame(totals, teamSquads(games, boxes), current).size).toBe(
       0,
     );
+  });
+});
+
+describe("playersOutSince", () => {
+  // PAR plays rounds 1-6 (1-6 Oct 2026, 18:00 UTC).
+  const schedule = [1, 2, 3, 4, 5, 6].map((r) => game(r, r, "PAR", "RED", 80, 70));
+  const date = (round: number) => schedule[round - 1].date;
+
+  /** `rounds[p]` = the rounds player p was in PAR's squad; "x" plays every game. */
+  const outSince = (
+    rounds: Record<string, number[]>,
+    current?: Map<string, CurrentClub>,
+    games = schedule,
+  ) => {
+    const all = { x: games.map((g) => g.round), ...rounds };
+    const boxes: GameBox[] = games.map((g) => ({
+      gameCode: g.gameCode,
+      lines: Object.entries(all)
+        .filter(([, r]) => r.includes(g.round))
+        .map(([p]) => line(p, "PAR")),
+    }));
+    const dated = boxes.flatMap((b) =>
+      b.lines.map((l) => ({ ...l, date: games[b.gameCode - 1].date })),
+    );
+    const clubs =
+      current ??
+      new Map(Object.keys(all).map((p) => [p, { teamCode: "PAR", since: null }]));
+    return playersOutSince(totalsFromLines(dated), teamSquads(games, boxes), clubs);
+  };
+
+  it("flags 3 missed games in a row with the date of the first one", () => {
+    expect(outSince({ hurt: [1, 2, 3] }).get("hurt")).toBe(date(4));
+  });
+
+  it("does not flag only 2 missed games", () => {
+    expect(outSince({ hurt: [1, 2, 3, 4] }).has("hurt")).toBe(false);
+  });
+
+  it("clears the flag once he is back in the squad", () => {
+    expect(outSince({ back: [1, 2, 6] }).has("back")).toBe(false);
+  });
+
+  it("flags a player seen once at the start, then never again (Derek Willis)", () => {
+    expect(outSince({ willis: [1] }).get("willis")).toBe(date(2));
+  });
+
+  it("does not flag a player who was not a regular before the absence", () => {
+    // In 1 of PAR's first 3 games: a bench player, not an injury.
+    expect(outSince({ bench: [3] }).has("bench")).toBe(false);
+  });
+
+  it("does not flag a player never in his current club's squad", () => {
+    const current = new Map<string, CurrentClub>([
+      ["x", { teamCode: "PAR", since: null }],
+      ["ghost", { teamCode: "PAR", since: null }],
+    ]);
+    expect(outSince({}, current).has("ghost")).toBe(false);
+  });
+
+  it("ignores a former club after a transfer", () => {
+    // He left PAR after round 1 and has not played for RED yet.
+    const current = new Map<string, CurrentClub>([
+      ["x", { teamCode: "PAR", since: null }],
+      ["moved", { teamCode: "RED", since: Date.UTC(2026, 9, 2) }],
+    ]);
+    expect(outSince({ moved: [1] }, current).has("moved")).toBe(false);
+  });
+
+  it("counts the regular threshold from the contract start", () => {
+    // Signed before round 3, in the squad for round 3, out for rounds 4-6.
+    const current = new Map<string, CurrentClub>([
+      ["x", { teamCode: "PAR", since: null }],
+      ["new", { teamCode: "PAR", since: Date.UTC(2026, 9, 3) }],
+    ]);
+    expect(outSince({ new: [3] }, current).get("new")).toBe(date(4));
   });
 });

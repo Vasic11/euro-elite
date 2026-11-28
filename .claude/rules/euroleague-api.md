@@ -38,6 +38,14 @@ default `E2026` = 2026-27). All calls go through `euroleagueFetch(path, schema,
   stint, `latestActive`), never a former one, and only flags regulars: in the
   squad for ≥ half of that club's games since his contract `startDate`
   (otherwise every bench player, or nobody signed mid-season, gets flagged).
+- `outSince` (`playersOutSince`): current club only; he was in its squad at
+  least once, the club then played ≥ `OUT_MIN_GAMES` (3) boxed games without
+  him, and before that he was in the squad for ≥ half of its games since his
+  contract `startDate`. The date is the first missed game. It replaces
+  `missedLastGame` (one badge, not both). Never in the new club's squad → no badge.
+- Career timeline (`careerStints`): player stints by `startDate`, same-club
+  stints merged, shown only with ≥ 2 clubs. Contract dates are zoneless and
+  stored as UTC, so they are displayed in UTC (`formatStintDate`), not Belgrade.
 - Short display names come from `SHORT_NAMES` in `mappers.ts` (RED =
   "Crvena Zvezda", not "Crvena"); full name plus table rank in game rows.
 - Dates are shown in `Europe/Belgrade` (`formatGameDate`).
