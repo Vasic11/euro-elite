@@ -5,8 +5,8 @@
  */
 import type { Coach, Player, Team, TeamSummary } from "@/lib/euroleague/types";
 import {
-  averagesFromLines,
-  linesByPlayer,
+  averagesFromTotals,
+  type PlayerClubTotals,
   playersWhoMissedLastGame,
   teamRecord,
 } from "@/lib/stats/aggregate";
@@ -27,16 +27,20 @@ export function latestActive(entries: RosterEntry[], role: string): RosterEntry[
 }
 
 /**
- * All active players, best PIR first. Averages come from the box scores and
- * only count games where the player got on the court (`averagesFromLines`).
+ * All active players, best PIR first. Averages come from the per-club totals
+ * (all clubs of a transferred player together) and only count games where the
+ * player got on the court (`averagesFromTotals`).
  */
 export function buildPlayers({
   roster,
-  schedule,
-  boxes,
-}: Pick<SeasonData, "roster" | "schedule" | "boxes">): Player[] {
-  const lines = linesByPlayer(boxes);
-  const missed = playersWhoMissedLastGame(schedule, boxes);
+  totals,
+  squads,
+}: Pick<SeasonData, "roster" | "totals" | "squads">): Player[] {
+  const byPlayer = new Map<string, PlayerClubTotals[]>();
+  for (const t of totals) {
+    byPlayer.set(t.playerCode, [...(byPlayer.get(t.playerCode) ?? []), t]);
+  }
+  const missed = playersWhoMissedLastGame(totals, squads);
 
   return latestActive(roster, "J")
     .map((entry): Player => ({
@@ -50,7 +54,7 @@ export function buildPlayers({
       birthDate: entry.birthDate,
       imageUrl: entry.imageUrl,
       team: entry.club,
-      averages: averagesFromLines(lines.get(entry.personCode) ?? []),
+      averages: averagesFromTotals(byPlayer.get(entry.personCode) ?? []),
       missedLastGame: missed.has(entry.personCode),
     }))
     .sort(

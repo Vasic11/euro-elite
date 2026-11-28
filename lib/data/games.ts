@@ -4,19 +4,7 @@ import { cache } from "react";
 
 import { getPlayerGamesFromDb } from "@/lib/db/queries";
 import type { GameLogEntry } from "@/lib/euroleague/types";
-import { gameLogFor } from "@/lib/stats/aggregate";
-import type { PlayerGameLine } from "@/lib/stats/boxScore";
-
-import { getSeason } from "./season";
-
-/**
- * Every game the player played this season, by round. Built from the same box
- * scores as the averages, so the numbers always agree.
- */
-export async function getPlayerGameLog(playerCode: string): Promise<GameLogEntry[]> {
-  const { schedule, boxes } = await getSeason();
-  return gameLogFor(playerCode, schedule, boxes);
-}
+import { gameLogFromGames, type PlayerGameLine } from "@/lib/stats/boxScore";
 
 /**
  * Every game of the player with all box score columns, oldest first, for the
@@ -30,3 +18,12 @@ export const getPlayerGames = cache(
     return games.toSorted((a, b) => a.date.localeCompare(b.date));
   },
 );
+
+/**
+ * Every game the player played this season, by round, for the form section.
+ * Reads the same per-player cache entry as the stat tables (React's `cache`
+ * shares one read per render), not the season entry.
+ */
+export async function getPlayerGameLog(playerCode: string): Promise<GameLogEntry[]> {
+  return gameLogFromGames(await getPlayerGames(playerCode));
+}

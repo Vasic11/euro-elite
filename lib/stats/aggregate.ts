@@ -2,7 +2,7 @@
  * Računanje statistike iz box score-ova. Čiste funkcije: ne znaju ništa o API-ju
  * ni o React-u, pa su lake za testiranje i kasnije za noćnu sinhronizaciju u bazu.
  */
-import type { GameLogEntry, SeasonAverages, TeamSummary } from "@/lib/euroleague/types";
+import type { SeasonAverages, TeamSummary } from "@/lib/euroleague/types";
 
 /** Utakmica iz rasporeda. */
 export type ScheduledGame = {
@@ -42,120 +42,188 @@ export type GameBox = { gameCode: number; lines: BoxLine[] };
 const percent = (made: number, attempted: number) =>
   attempted > 0 ? (made / attempted) * 100 : 0;
 
-/** Prosek po utakmici. Računaju se samo utakmice na kojima je igrač ušao u igru. */
-export function averagesFromLines(lines: BoxLine[]): SeasonAverages | null {
-  const played = lines.filter((l) => l.seconds > 0);
-  if (played.length === 0) return null;
+/**
+ * Zbirovi jednog igrača za jedan klub (posle transfera igrač ima dva reda).
+ * Ovo je ono što sezonski keš čuva umesto sirovih box linija: raste sa brojem
+ * igrača, ne sa brojem utakmica. Baza računa iste zbirove u SQL-u
+ * (`loadTotals` u lib/db/queries.ts); `totalsFromLines` je ista stvar u JS-u.
+ */
+export type PlayerClubTotals = {
+  playerCode: string;
+  teamCode: string;
+  /** Utakmice u sastavu (12 igrača), i one sa 0 sekundi. */
+  squadGames: number;
+  /** Utakmice na kojima je ušao u igru (seconds > 0); zbirovi ispod su samo za njih. */
+  games: number;
+  seconds: number;
+  points: number;
+  twoMade: number;
+  twoAttempted: number;
+  threeMade: number;
+  threeAttempted: number;
+  ftMade: number;
+  ftAttempted: number;
+  rebounds: number;
+  assists: number;
+  steals: number;
+  blocks: number;
+  turnovers: number;
+  pir: number;
+};
 
-  const sum = (pick: (l: BoxLine) => number) =>
-    played.reduce((total, l) => total + pick(l), 0);
-  const avg = (pick: (l: BoxLine) => number) => sum(pick) / played.length;
+/** Polja koja se sabiraju (sve osim šifara i broja utakmica). */
+const SUMMED = [
+  "seconds",
+  "points",
+  "twoMade",
+  "twoAttempted",
+  "threeMade",
+  "threeAttempted",
+  "ftMade",
+  "ftAttempted",
+  "rebounds",
+  "assists",
+  "steals",
+  "blocks",
+  "turnovers",
+  "pir",
+] as const satisfies readonly (keyof BoxLine & keyof PlayerClubTotals)[];
 
-  return {
-    games: played.length,
-    minutes: avg((l) => l.seconds) / 60,
-    points: avg((l) => l.points),
-    rebounds: avg((l) => l.rebounds),
-    assists: avg((l) => l.assists),
-    steals: avg((l) => l.steals),
-    blocks: avg((l) => l.blocks),
-    turnovers: avg((l) => l.turnovers),
-    pir: avg((l) => l.pir),
-    // Procenti iz ukupnih pogodaka, ne prosek procenata (inače 1/1 i 0/10 daju 50%).
-    fieldGoalPct: percent(
-      sum((l) => l.twoMade + l.threeMade),
-      sum((l) => l.twoAttempted + l.threeAttempted),
-    ),
-    threePointPct: percent(
-      sum((l) => l.threeMade),
-      sum((l) => l.threeAttempted),
-    ),
-    freeThrowPct: percent(
-      sum((l) => l.ftMade),
-      sum((l) => l.ftAttempted),
-    ),
-  };
-}
+type Sums = Record<(typeof SUMMED)[number], number>;
 
-/** Svi redovi box score-a grupisani po igraču. */
-export function linesByPlayer(boxes: GameBox[]): Map<string, BoxLine[]> {
-  const byPlayer = new Map<string, BoxLine[]>();
-  for (const box of boxes) {
-    for (const line of box.lines) {
-      const list = byPlayer.get(line.playerCode) ?? [];
-      list.push(line);
-      byPlayer.set(line.playerCode, list);
+const zeroSums = (): Sums => Object.fromEntries(SUMMED.map((k) => [k, 0])) as Sums;
+
+/** Box linije sabrane po (igrač, klub); zbirovi samo iz utakmica sa seconds > 0. */
+export function totalsFromLines(lines: BoxLine[]): PlayerClubTotals[] {
+  const byKey = new Map<string, PlayerClubTotals>();
+  for (const l of lines) {
+    const key = `${l.teamCode}:${l.playerCode}`;
+    let t = byKey.get(key);
+    if (!t) {
+      t = {
+        playerCode: l.playerCode,
+        teamCode: l.teamCode,
+        squadGames: 0,
+        games: 0,
+        ...zeroSums(),
+      };
+      byKey.set(key, t);
     }
+    t.squadGames++;
+    if (l.seconds <= 0) continue;
+    t.games++;
+    for (const k of SUMMED) t[k] += l[k];
   }
-  return byPlayer;
-}
-
-/** Utakmice jednog igrača iz ugla njegovog tima, od prvog ka poslednjem kolu. */
-export function gameLogFor(
-  playerCode: string,
-  games: ScheduledGame[],
-  boxes: GameBox[],
-): GameLogEntry[] {
-  const gamesByCode = new Map(games.map((g) => [g.gameCode, g]));
-  const log: GameLogEntry[] = [];
-
-  for (const box of boxes) {
-    const line = box.lines.find((l) => l.playerCode === playerCode);
-    const game = gamesByCode.get(box.gameCode);
-    if (!line || !game || line.seconds === 0) continue;
-
-    const isHome = game.home.code === line.teamCode;
-    const teamScore = isHome ? game.homeScore : game.awayScore;
-    const opponentScore = isHome ? game.awayScore : game.homeScore;
-    log.push({
-      gameCode: game.gameCode,
-      round: game.round,
-      date: game.date,
-      opponent: isHome ? game.away : game.home,
-      isHome,
-      teamScore,
-      opponentScore,
-      won: teamScore > opponentScore,
-      started: line.started,
-      minutes: line.seconds / 60,
-      points: line.points,
-      rebounds: line.rebounds,
-      assists: line.assists,
-      steals: line.steals,
-      blocks: line.blocks,
-      turnovers: line.turnovers,
-      pir: line.pir,
-    });
-  }
-  return log.sort((a, b) => a.round - b.round);
+  return [...byKey.values()];
 }
 
 /**
- * Sastav (12 igrača) svakog tima na njegovoj poslednjoj odigranoj utakmici.
- * Igrač iz rostera koga nema u tom sastavu je propustio poslednju utakmicu
- * (povreda, bolest ili odluka trenera; API ne kaže razlog).
+ * Prosek po utakmici iz zbirova jednog igrača (svi njegovi klubovi zajedno).
+ * Računaju se samo utakmice na kojima je igrač ušao u igru.
  */
-export function lastGameSquads(
-  games: ScheduledGame[],
-  boxes: GameBox[],
-): Map<string, Set<string>> {
-  const boxByCode = new Map(boxes.map((b) => [b.gameCode, b]));
-  const latestByTeam = new Map<string, ScheduledGame>();
+export function averagesFromTotals(totals: PlayerClubTotals[]): SeasonAverages | null {
+  const games = totals.reduce((n, t) => n + t.games, 0);
+  if (games === 0) return null;
 
+  const sums = zeroSums();
+  for (const t of totals) for (const k of SUMMED) sums[k] += t[k];
+  const avg = (k: keyof Sums) => sums[k] / games;
+
+  return {
+    games,
+    minutes: avg("seconds") / 60,
+    points: avg("points"),
+    rebounds: avg("rebounds"),
+    assists: avg("assists"),
+    steals: avg("steals"),
+    blocks: avg("blocks"),
+    turnovers: avg("turnovers"),
+    pir: avg("pir"),
+    // Procenti iz ukupnih pogodaka, ne prosek procenata (inače 1/1 i 0/10 daju 50%).
+    fieldGoalPct: percent(
+      sums.twoMade + sums.threeMade,
+      sums.twoAttempted + sums.threeAttempted,
+    ),
+    threePointPct: percent(sums.threeMade, sums.threeAttempted),
+    freeThrowPct: percent(sums.ftMade, sums.ftAttempted),
+  };
+}
+
+/** Prosek po utakmici iz box linija jednog igrača (isti put kao iz baze). */
+export function averagesFromLines(lines: BoxLine[]): SeasonAverages | null {
+  return averagesFromTotals(totalsFromLines(lines));
+}
+
+/** Tim: koliko utakmica sa box score-om ima i ko je bio u sastavu na poslednjoj. */
+export type TeamSquad = {
+  teamCode: string;
+  games: number;
+  /** Null kada tim još nema odigranu utakmicu sa box score-om. */
+  lastSquad: string[] | null;
+};
+
+/**
+ * Poslednja odigrana utakmica svakog tima, od utakmica koje imaju box score.
+ * "Poslednja" po datumu, nikad po indeksu (raspored stiže od najnovije).
+ */
+export function latestGameByTeam(
+  games: ScheduledGame[],
+  boxedGameCodes: ReadonlySet<number>,
+): Map<string, ScheduledGame> {
+  const latestByTeam = new Map<string, ScheduledGame>();
   for (const game of games) {
-    if (!game.played || !boxByCode.has(game.gameCode)) continue;
+    if (!game.played || !boxedGameCodes.has(game.gameCode)) continue;
     for (const team of [game.home.code, game.away.code]) {
       const current = latestByTeam.get(team);
       if (!current || game.date > current.date) latestByTeam.set(team, game);
     }
   }
+  return latestByTeam;
+}
 
-  const squads = new Map<string, Set<string>>();
-  for (const [team, game] of latestByTeam) {
-    const lines = boxByCode.get(game.gameCode)!.lines.filter((l) => l.teamCode === team);
-    squads.set(team, new Set(lines.map((l) => l.playerCode)));
+/** Jedan igrač u sastavu jednog tima na jednoj utakmici. */
+export type SquadEntry = { gameCode: number; teamCode: string; playerCode: string };
+
+/**
+ * `TeamSquad` za svaki tim. Baza ne šalje sve linije: `teamGames` su parovi
+ * (utakmica, tim) sa box score-om, a `lastGameLines` sastavi bar sa poslednjih
+ * utakmica (višak se ignoriše). Isto pravilo za bazu i za `teamSquads`.
+ */
+export function squadsFrom(
+  games: ScheduledGame[],
+  teamGames: Omit<SquadEntry, "playerCode">[],
+  lastGameLines: SquadEntry[],
+): TeamSquad[] {
+  const counts = new Map<string, Set<number>>();
+  for (const { gameCode, teamCode } of teamGames) {
+    counts.set(teamCode, (counts.get(teamCode) ?? new Set()).add(gameCode));
   }
-  return squads;
+  const latest = latestGameByTeam(games, new Set(teamGames.map((t) => t.gameCode)));
+
+  return [...new Set([...counts.keys(), ...latest.keys()])].map((teamCode) => {
+    const game = latest.get(teamCode);
+    return {
+      teamCode,
+      games: counts.get(teamCode)?.size ?? 0,
+      lastSquad: game
+        ? lastGameLines
+            .filter((l) => l.gameCode === game.gameCode && l.teamCode === teamCode)
+            .map((l) => l.playerCode)
+        : null,
+    };
+  });
+}
+
+/** `TeamSquad` za svaki tim iz celih box score-ova. */
+export function teamSquads(games: ScheduledGame[], boxes: GameBox[]): TeamSquad[] {
+  const lines = boxes.flatMap((b) =>
+    b.lines.map((l) => ({
+      gameCode: b.gameCode,
+      teamCode: l.teamCode,
+      playerCode: l.playerCode,
+    })),
+  );
+  return squadsFrom(games, lines, lines);
 }
 
 /** Pobede i porazi tima iz odigranih utakmica. */
@@ -183,31 +251,16 @@ export function teamRecord(
  * klupe (rosteri imaju 17-19 igrača, sastav 12) bio označen.
  */
 export function playersWhoMissedLastGame(
-  games: ScheduledGame[],
-  boxes: GameBox[],
+  totals: PlayerClubTotals[],
+  squads: TeamSquad[],
 ): Set<string> {
-  const squads = lastGameSquads(games, boxes);
-
-  // Koliko utakmica (sa box score-om) je svaki tim odigrao i koliko puta je igrač bio u sastavu.
-  const teamGames = new Map<string, number>();
-  const appearances = new Map<string, { team: string; count: number }>();
-  for (const box of boxes) {
-    const teamsInGame = new Set(box.lines.map((l) => l.teamCode));
-    for (const team of teamsInGame) teamGames.set(team, (teamGames.get(team) ?? 0) + 1);
-    for (const line of box.lines) {
-      const key = `${line.teamCode}:${line.playerCode}`;
-      const current = appearances.get(key) ?? { team: line.teamCode, count: 0 };
-      current.count++;
-      appearances.set(key, current);
-    }
-  }
-
+  const byTeam = new Map(squads.map((s) => [s.teamCode, s]));
   const missed = new Set<string>();
-  for (const [key, { team, count }] of appearances) {
-    const playerCode = key.slice(team.length + 1);
-    const squad = squads.get(team);
-    const regular = count >= Math.ceil((teamGames.get(team) ?? 0) / 2);
-    if (squad && regular && !squad.has(playerCode)) missed.add(playerCode);
+  for (const t of totals) {
+    const squad = byTeam.get(t.teamCode);
+    if (!squad?.lastSquad) continue;
+    const regular = t.squadGames >= Math.ceil(squad.games / 2);
+    if (regular && !squad.lastSquad.includes(t.playerCode)) missed.add(t.playerCode);
   }
   return missed;
 }

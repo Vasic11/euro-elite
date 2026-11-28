@@ -1,16 +1,23 @@
 import "server-only";
 
-import { and, eq, inArray } from "drizzle-orm";
-import { alias } from "drizzle-orm/pg-core";
+import { and, eq, inArray, sql } from "drizzle-orm";
+import { alias, type AnyPgColumn } from "drizzle-orm/pg-core";
 import { unstable_cache } from "next/cache";
 
-import type { GameBox, RosterEntry, SeasonData } from "@/lib/data/types";
+import type {
+  PlayerClubTotals,
+  RosterEntry,
+  ScheduledGame,
+  SeasonData,
+  TeamSquad,
+} from "@/lib/data/types";
 import { DEFAULT_REVALIDATE_SECONDS, SEASON_CODE } from "@/lib/euroleague/config";
 import { formatPersonName } from "@/lib/euroleague/format";
 import { teamSummary } from "@/lib/euroleague/mappers";
 import type { Position } from "@/lib/euroleague/types";
+import { latestGameByTeam, squadsFrom } from "@/lib/stats/aggregate";
 import type { PlayerGameLine } from "@/lib/stats/boxScore";
-import { rowToBoxLine, rowToDetailedBoxLine } from "@/lib/sync/rows";
+import { rowToDetailedBoxLine } from "@/lib/sync/rows";
 
 import { getDb } from "./client";
 import { clubs, games, people, playerGameStats, rosterStints } from "./schema";
@@ -89,36 +96,87 @@ async function loadSchedule(): Promise<SeasonData["schedule"]> {
   }));
 }
 
-/**
- * Every stored box score line, grouped by game. 0-second rows stay in (they
- * mark squad membership for "missed last game"); `averagesFromLines` skips them.
- */
-async function loadBoxScores(): Promise<GameBox[]> {
-  const rows = await getDb()
-    .select()
-    .from(playerGameStats)
-    .where(eq(playerGameStats.seasonCode, SEASON_CODE));
+const stats = playerGameStats;
+const thisSeason = eq(stats.seasonCode, SEASON_CODE);
+const onCourt = sql`${stats.seconds} > 0`;
 
-  const byGame = new Map<number, GameBox>();
-  for (const row of rows) {
-    let box = byGame.get(row.gameCode);
-    if (!box) {
-      box = { gameCode: row.gameCode, lines: [] };
-      byGame.set(row.gameCode, box);
-    }
-    box.lines.push(rowToBoxLine(row));
-  }
-  return [...byGame.values()];
+/** Sum over games he got on the court; `::int` because Postgres sums to bigint (a string in JS). */
+const sumOnCourt = (column: AnyPgColumn) =>
+  sql<number>`(coalesce(sum(${column}) filter (where ${onCourt}), 0))::int`;
+
+/**
+ * Season totals per (player, club) computed in Postgres, so the season entry
+ * holds ~one row per player instead of every box score line. Only sums and
+ * counts here: the division (averages, percentages) stays in
+ * `averagesFromTotals`, so the numbers are the same as from raw lines.
+ */
+async function loadTotals(): Promise<PlayerClubTotals[]> {
+  return getDb()
+    .select({
+      playerCode: stats.personCode,
+      teamCode: stats.clubCode,
+      squadGames: sql<number>`(count(*))::int`,
+      games: sql<number>`(count(*) filter (where ${onCourt}))::int`,
+      seconds: sumOnCourt(stats.seconds),
+      points: sumOnCourt(stats.points),
+      twoMade: sumOnCourt(stats.fg2Made),
+      twoAttempted: sumOnCourt(stats.fg2Att),
+      threeMade: sumOnCourt(stats.fg3Made),
+      threeAttempted: sumOnCourt(stats.fg3Att),
+      ftMade: sumOnCourt(stats.ftMade),
+      ftAttempted: sumOnCourt(stats.ftAtt),
+      rebounds: sumOnCourt(stats.reb),
+      assists: sumOnCourt(stats.ast),
+      steals: sumOnCourt(stats.stl),
+      blocks: sumOnCourt(stats.blk),
+      turnovers: sumOnCourt(stats.tov),
+      pir: sumOnCourt(stats.pir),
+    })
+    .from(stats)
+    .where(thisSeason)
+    .groupBy(stats.personCode, stats.clubCode);
+}
+
+/**
+ * Per club: games with a box score and the squad of its latest one, for
+ * "missed last game". Reads (game, club) pairs, then only the lines of each
+ * club's latest game (~20 games), never the whole season of lines.
+ */
+async function loadSquads(schedule: ScheduledGame[]): Promise<TeamSquad[]> {
+  const db = getDb();
+  const teamGames = await db
+    .selectDistinct({ gameCode: stats.gameCode, teamCode: stats.clubCode })
+    .from(stats)
+    .where(thisSeason);
+
+  const boxed = new Set(teamGames.map((t) => t.gameCode));
+  const lastCodes = [
+    ...new Set([...latestGameByTeam(schedule, boxed).values()].map((g) => g.gameCode)),
+  ];
+  const lastGameLines = lastCodes.length
+    ? await db
+        .select({
+          gameCode: stats.gameCode,
+          teamCode: stats.clubCode,
+          playerCode: stats.personCode,
+        })
+        .from(stats)
+        .where(and(thisSeason, inArray(stats.gameCode, lastCodes)))
+    : [];
+
+  return squadsFrom(schedule, teamGames, lastGameLines);
 }
 
 async function loadSeasonFromDb(): Promise<SeasonData> {
-  const [clubList, roster, schedule, boxes] = await Promise.all([
+  const [clubList, roster, schedule, totals] = await Promise.all([
     loadClubs(),
     loadRoster(),
     loadSchedule(),
-    loadBoxScores(),
+    loadTotals(),
   ]);
-  return { clubs: clubList, roster, schedule, boxes };
+  // Needs the schedule to find each club's latest game.
+  const squads = await loadSquads(schedule);
+  return { clubs: clubList, roster, schedule, totals, squads };
 }
 
 /**
@@ -189,7 +247,9 @@ export const getPlayerGamesFromDb = unstable_cache(
  */
 export const getSeasonFromDb = unstable_cache(
   loadSeasonFromDb,
-  ["season-db", SEASON_CODE],
+  // v2: totals and squads instead of raw box lines; a new key so an entry of
+  // the old shape is never read after a deploy.
+  ["season-db-v2", SEASON_CODE],
   {
     revalidate: DEFAULT_REVALIDATE_SECONDS,
     tags: [DB_CACHE_TAG],

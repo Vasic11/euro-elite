@@ -60,7 +60,7 @@ describe("buildPlayers", () => {
       entry({ personCode: "B", name: "Zoran" }),
       entry({ personCode: "A", name: "Aleksa" }),
     ];
-    const players = buildPlayers({ roster, schedule: [], boxes: [] });
+    const players = buildPlayers({ roster, totals: [], squads: [] });
     expect(players.map((p) => p.name)).toEqual(["Aleksa", "Zoran"]);
   });
 });
