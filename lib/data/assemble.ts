@@ -7,9 +7,11 @@ import type { Coach, Player, Team, TeamSummary } from "@/lib/euroleague/types";
 import {
   averagesFromTotals,
   type PlayerClubTotals,
+  playersOutSince,
   playersWhoMissedLastGame,
   teamRecord,
 } from "@/lib/stats/aggregate";
+import { type CareerStint, careerStints } from "@/lib/stats/career";
 
 import type { RosterEntry, SeasonData } from "./types";
 
@@ -41,13 +43,12 @@ export function buildPlayers({
     byPlayer.set(t.playerCode, [...(byPlayer.get(t.playerCode) ?? []), t]);
   }
   const current = latestActive(roster, "J");
-  const missed = playersWhoMissedLastGame(
-    totals,
-    squads,
-    new Map(
-      current.map((e) => [e.personCode, { teamCode: e.club.code, since: e.startDate }]),
-    ),
+  const currentClubs = new Map(
+    current.map((e) => [e.personCode, { teamCode: e.club.code, since: e.startDate }]),
   );
+  const missed = playersWhoMissedLastGame(totals, squads, currentClubs);
+  const out = playersOutSince(totals, squads, currentClubs);
+  const stintsByPerson = Map.groupBy(roster, (e) => e.personCode);
 
   return current
     .map((entry): Player => ({
@@ -62,7 +63,12 @@ export function buildPlayers({
       imageUrl: entry.imageUrl,
       team: entry.club,
       averages: averagesFromTotals(byPlayer.get(entry.personCode) ?? []),
-      missedLastGame: missed.has(entry.personCode),
+      // One badge at a time: a long absence is shown as "Out since", not both.
+      missedLastGame: missed.has(entry.personCode) && !out.has(entry.personCode),
+      previousClub: previousClub(
+        careerStints(stintsByPerson.get(entry.personCode) ?? []),
+      ),
+      outSince: out.get(entry.personCode) ?? null,
     }))
     .sort(
       (a, b) =>
@@ -70,6 +76,17 @@ export function buildPlayers({
         // Ties (e.g. players who haven't played) by name, not by input order.
         a.name.localeCompare(b.name),
     );
+}
+
+/** The club right before the current one, or null without a transfer this season. */
+function previousClub(career: CareerStint[]) {
+  const i = career.findIndex((s) => s.current);
+  return i > 0 ? career[i - 1].club : null;
+}
+
+/** This season's clubs of one player for the profile timeline; empty with one club. */
+export function buildCareer(roster: RosterEntry[], personCode: string): CareerStint[] {
+  return careerStints(roster.filter((e) => e.personCode === personCode));
 }
 
 /** Head coach of every club, by club code. */

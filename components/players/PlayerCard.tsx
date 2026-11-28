@@ -2,9 +2,10 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { formatStat, POSITION_LABEL, splitName } from "@/lib/euroleague/format";
-import type { Player } from "@/lib/euroleague/types";
+import type { Player, TeamSummary } from "@/lib/euroleague/types";
 
 import { MissedGameBadge } from "./MissedGameBadge";
+import { OutBadge } from "./OutBadge";
 import { PlayerPanel } from "./PlayerPanel";
 
 /** Link ka profilu; `from` je stranica sa koje se dolazi, da dugme za povratak vodi tamo. */
@@ -45,6 +46,9 @@ export function PlayerCard({
           </span>
         )}
         {player.missedLastGame && <MissedGameBadge className="absolute top-3 left-3" />}
+        {player.outSince && (
+          <OutBadge since={player.outSince} className="absolute top-3 left-3" />
+        )}
         {player.position && (
           <span className="absolute bottom-3 left-3 rounded bg-paper/90 px-2 py-0.5 font-display text-sm font-bold text-ink">
             {POSITION_LABEL[player.position]}
@@ -69,6 +73,7 @@ export function PlayerCard({
               />
             )}
             {player.team.shortName}
+            {player.previousClub && <PreviousClub club={player.previousClub} />}
           </p>
         </div>
 
@@ -79,6 +84,38 @@ export function PlayerCard({
         </dl>
       </div>
     </Link>
+  );
+}
+
+/** Diskretan trag transfera: strelica i grb kluba iz kog je došao ove sezone. */
+function PreviousClub({ club }: { club: TeamSummary }) {
+  return (
+    <span
+      title={`Joined from ${club.name}`}
+      className="ml-1 inline-flex items-center gap-1"
+    >
+      <svg viewBox="0 0 12 12" className="h-3 w-3 text-ink-faint" aria-hidden>
+        <path
+          d="M10 6H2.5M5.5 3 2.5 6l3 3"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+      {club.crestUrl ? (
+        <Image
+          src={club.crestUrl}
+          alt={`from ${club.shortName}`}
+          width={28}
+          height={28}
+          className="h-3.5 w-3.5 object-contain opacity-80"
+        />
+      ) : (
+        <span className="text-xs">{club.shortName}</span>
+      )}
+    </span>
   );
 }
 

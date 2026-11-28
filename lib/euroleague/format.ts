@@ -72,6 +72,20 @@ export const POSITION_LABEL: Record<Position, string> = {
   Center: "Center",
 };
 
+/**
+ * Formatira datum, ali mesec uvek sa tri slova. Novije ICU verzije za "en-GB"
+ * pišu septembar kao "Sept", a svi ostali meseci imaju tri slova ("Sep" kao "Nov").
+ */
+export function formatWithShortMonth(
+  format: Intl.DateTimeFormat,
+  date: Date | number,
+): string {
+  return format
+    .formatToParts(date)
+    .map((p) => (p.type === "month" ? p.value.slice(0, 3) : p.value))
+    .join("");
+}
+
 const gameDateFormat = new Intl.DateTimeFormat("en-GB", {
   weekday: "short",
   day: "numeric",
@@ -83,5 +97,16 @@ const gameDateFormat = new Intl.DateTimeFormat("en-GB", {
 
 /** "2026-11-24T18:00:00Z" -> "Tue 24 Nov, 19:00" (beogradsko vreme). */
 export function formatGameDate(iso: string): string {
-  return gameDateFormat.format(new Date(iso));
+  return formatWithShortMonth(gameDateFormat, new Date(iso));
+}
+
+const dayMonthFormat = new Intl.DateTimeFormat("en-GB", {
+  day: "numeric",
+  month: "short",
+  timeZone: DISPLAY_TIME_ZONE,
+});
+
+/** "2026-10-02T18:00:00Z" -> "2 Oct" (beogradsko vreme), za kratke oznake. */
+export function formatDayMonth(iso: string): string {
+  return formatWithShortMonth(dayMonthFormat, new Date(iso));
 }

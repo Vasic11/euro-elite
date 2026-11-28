@@ -4,8 +4,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
+import { CareerTimeline } from "@/components/players/CareerTimeline";
 import { PlayerForm, PlayerFormSkeleton } from "@/components/players/form/PlayerForm";
 import { MissedGameBadge } from "@/components/players/MissedGameBadge";
+import { OutBadge } from "@/components/players/OutBadge";
 import { PlayerPanel } from "@/components/players/PlayerPanel";
 import { RadarChart } from "@/components/players/RadarChart";
 import {
@@ -17,7 +19,7 @@ import { StatTile } from "@/components/ui/StatTile";
 import { BackLink } from "@/components/ui/BackLink";
 import { ContextBackLink } from "@/components/ui/ContextBackLink";
 import { ageFrom, formatStat, POSITION_LABEL, splitName } from "@/lib/euroleague/format";
-import { getPlayer, getPlayers, getTeams } from "@/lib/data/players";
+import { getPlayer, getPlayerCareer, getPlayers, getTeams } from "@/lib/data/players";
 
 type Props = { params: Promise<{ code: string }> };
 
@@ -44,7 +46,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 /** Profil igrača: /players/[code]. */
 export default async function PlayerPage({ params }: Props) {
   const { code } = await params;
-  const [player, teams] = await Promise.all([getPlayer(code), getTeams()]);
+  const [player, teams, career] = await Promise.all([
+    getPlayer(code),
+    getTeams(),
+    getPlayerCareer(code),
+  ]);
   const teamNames = Object.fromEntries(
     teams.map((t) => [t.code.toLowerCase(), t.shortName]),
   );
@@ -82,6 +88,7 @@ export default async function PlayerPage({ params }: Props) {
         <div className="flex flex-col gap-8 p-6 sm:p-8">
           <div>
             {player.missedLastGame && <MissedGameBadge className="mb-3" />}
+            {player.outSince && <OutBadge since={player.outSince} className="mb-3" />}
             <p className="text-2xl leading-tight text-ink-muted">{first}</p>
             <h1 className="font-display text-6xl leading-[0.88] font-extrabold uppercase sm:text-7xl">
               {last}
@@ -131,6 +138,8 @@ export default async function PlayerPage({ params }: Props) {
           )}
         </div>
       </section>
+
+      {career.length > 1 && <CareerTimeline career={career} />}
 
       {averages && (
         <>

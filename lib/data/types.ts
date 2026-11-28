@@ -28,6 +28,8 @@ export type RosterEntry = {
   active: boolean;
   /** Epoch ms, so the API's zoneless strings and DB timestamps compare the same way. */
   startDate: number | null;
+  /** Epoch ms; for an inactive stint the day he left, for an active one the contract end. */
+  endDate: number | null;
   club: TeamSummary;
   personCode: string;
   /** Already formatted for display ("Nikola Kalinic"). */

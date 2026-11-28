@@ -3,8 +3,9 @@ import "server-only";
 import { cache } from "react";
 
 import type { Player, Team } from "@/lib/euroleague/types";
+import type { CareerStint } from "@/lib/stats/career";
 
-import { buildCoaches, buildPlayers, buildTeams } from "./assemble";
+import { buildCareer, buildCoaches, buildPlayers, buildTeams } from "./assemble";
 import { getSeason } from "./season";
 
 /** All active players, best PIR first. */
@@ -15,6 +16,11 @@ export const getPlayers = cache(async (): Promise<Player[]> => {
 export async function getPlayer(code: string): Promise<Player | null> {
   const players = await getPlayers();
   return players.find((p) => p.code === code) ?? null;
+}
+
+/** This season's clubs of one player, first to current; empty if he had only one. */
+export async function getPlayerCareer(code: string): Promise<CareerStint[]> {
+  return buildCareer((await getSeason()).roster, code);
 }
 
 /** All clubs with players, head coach and record, sorted by name. */

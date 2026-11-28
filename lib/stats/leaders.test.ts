@@ -32,6 +32,8 @@ function player(code: string, games: number, points: number): Player {
     team: { code: "T", name: "T", shortName: "T", crestUrl: null },
     averages,
     missedLastGame: false,
+    previousClub: null,
+    outSince: null,
   };
 }
 

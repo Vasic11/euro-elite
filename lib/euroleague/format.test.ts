@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  formatDayMonth,
   formatGameDate,
   formatPersonName,
   normalizeForSearch,
@@ -45,5 +46,18 @@ describe("formatGameDate", () => {
   it("prikazuje beogradsko vreme", () => {
     // 18:00 UTC u novembru je 19:00 u Beogradu (UTC+1)
     expect(formatGameDate("2026-11-24T18:00:00Z")).toBe("Tue 24 Nov, 19:00");
+  });
+
+  it('writes September as "Sep", not "Sept"', () => {
+    // 18:00 UTC in September is 20:00 in Belgrade (UTC+2)
+    expect(formatGameDate("2026-09-29T18:00:00Z")).toBe("Tue 29 Sep, 20:00");
+  });
+});
+
+describe("formatDayMonth", () => {
+  it("uses a three-letter month in Belgrade time", () => {
+    expect(formatDayMonth("2026-09-29T18:00:00Z")).toBe("29 Sep");
+    // 23:30 UTC on 30 Sep is already 1 Oct in Belgrade
+    expect(formatDayMonth("2026-09-30T23:30:00Z")).toBe("1 Oct");
   });
 });

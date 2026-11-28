@@ -50,6 +50,17 @@ export type Player = {
    * ili odluka trenera.
    */
   missedLastGame: boolean;
+  /**
+   * Klub iz kog je došao ako je ove sezone promenio klub, inače null. Cela
+   * vremenska linija se pravi samo na profilu (`getPlayerCareer`), da lista
+   * igrača koja ide u browser ostane mala.
+   */
+  previousClub: TeamSummary | null;
+  /**
+   * ISO datum prve propuštene utakmice ako je duže van sastava sadašnjeg kluba
+   * (`playersOutSince`), inače null. Tada je `missedLastGame` false.
+   */
+  outSince: string | null;
 };
 
 export type Coach = {
