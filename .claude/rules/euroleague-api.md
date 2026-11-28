@@ -34,8 +34,10 @@ default `E2026` = 2026-27). All calls go through `euroleagueFetch(path, schema,
   the API; pages read the database. Fetch box scores with `mapLimit(…, 8)`; a
   failed box score is skipped (sync status `partial`), not fatal.
 - "Latest game" means max `utcDate`, never array index.
-- `missedLastGame` only flags regulars (in the squad for ≥ half of the team's
-  games), otherwise every bench player gets flagged.
+- `missedLastGame` only looks at the player's current club (latest active
+  stint, `latestActive`), never a former one, and only flags regulars: in the
+  squad for ≥ half of that club's games since his contract `startDate`
+  (otherwise every bench player, or nobody signed mid-season, gets flagged).
 - Short display names come from `SHORT_NAMES` in `mappers.ts` (RED =
   "Crvena Zvezda", not "Crvena"); full name plus table rank in game rows.
 - Dates are shown in `Europe/Belgrade` (`formatGameDate`).

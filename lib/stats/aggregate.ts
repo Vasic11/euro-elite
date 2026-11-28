@@ -154,10 +154,11 @@ export function averagesFromLines(lines: BoxLine[]): SeasonAverages | null {
   return averagesFromTotals(totalsFromLines(lines));
 }
 
-/** Tim: koliko utakmica sa box score-om ima i ko je bio u sastavu na poslednjoj. */
+/** Tim: kada je igrao utakmice sa box score-om i ko je bio u sastavu na poslednjoj. */
 export type TeamSquad = {
   teamCode: string;
-  games: number;
+  /** ISO datumi utakmica sa box score-om, od najstarije; prag za stalnog člana se računa od datuma ugovora. */
+  gameDates: string[];
   /** Null kada tim još nema odigranu utakmicu sa box score-om. */
   lastSquad: string[] | null;
 };
@@ -194,17 +195,21 @@ export function squadsFrom(
   teamGames: Omit<SquadEntry, "playerCode">[],
   lastGameLines: SquadEntry[],
 ): TeamSquad[] {
-  const counts = new Map<string, Set<number>>();
+  const dateByCode = new Map(games.map((g) => [g.gameCode, g.date]));
+  const gameCodes = new Map<string, Set<number>>();
   for (const { gameCode, teamCode } of teamGames) {
-    counts.set(teamCode, (counts.get(teamCode) ?? new Set()).add(gameCode));
+    gameCodes.set(teamCode, (gameCodes.get(teamCode) ?? new Set()).add(gameCode));
   }
   const latest = latestGameByTeam(games, new Set(teamGames.map((t) => t.gameCode)));
 
-  return [...new Set([...counts.keys(), ...latest.keys()])].map((teamCode) => {
+  return [...new Set([...gameCodes.keys(), ...latest.keys()])].map((teamCode) => {
     const game = latest.get(teamCode);
     return {
       teamCode,
-      games: counts.get(teamCode)?.size ?? 0,
+      gameDates: [...(gameCodes.get(teamCode) ?? [])]
+        .map((code) => dateByCode.get(code))
+        .filter((date) => date !== undefined)
+        .sort(),
       lastSquad: game
         ? lastGameLines
             .filter((l) => l.gameCode === game.gameCode && l.teamCode === teamCode)
@@ -244,22 +249,41 @@ export function teamRecord(
   return { wins, losses };
 }
 
+/** Sadašnji klub igrača (njegov poslednji aktivni ugovor) i od kada je tamo (epoch ms). */
+export type CurrentClub = { teamCode: string; since: number | null };
+
 /**
  * Igrači koji su "propustili poslednju utakmicu" na način koji nešto znači:
- * nisu bili u sastavu (12 igrača) na poslednjoj utakmici tima, a bili su u sastavu
- * na bar polovini utakmica tima. Bez ovog drugog uslova bi svaki igrač sa kraja
- * klupe (rosteri imaju 17-19 igrača, sastav 12) bio označen.
+ * nisu bili u sastavu (12 igrača) na poslednjoj utakmici svog SADAŠNJEG kluba,
+ * a bili su u sastavu na bar polovini utakmica tog kluba od početka ugovora.
+ * - Bivši klub se ne gleda: posle transfera igrača nema u sastavu starog kluba,
+ *   ali to nije propuštena utakmica.
+ * - Bez praga bi svaki igrač sa kraja klupe (rosteri imaju 17-19 igrača,
+ *   sastav 12) bio označen. Prag se računa od datuma ugovora, inače igrač koji
+ *   je došao usred sezone nikad ne bi bio "stalni".
+ * - Ako klub od dolaska igrača još nije igrao, nema šta da propusti.
  */
 export function playersWhoMissedLastGame(
   totals: PlayerClubTotals[],
   squads: TeamSquad[],
+  current: ReadonlyMap<string, CurrentClub>,
 ): Set<string> {
   const byTeam = new Map(squads.map((s) => [s.teamCode, s]));
   const missed = new Set<string>();
   for (const t of totals) {
+    const club = current.get(t.playerCode);
+    if (club?.teamCode !== t.teamCode) continue;
     const squad = byTeam.get(t.teamCode);
     if (!squad?.lastSquad) continue;
-    const regular = t.squadGames >= Math.ceil(squad.games / 2);
+
+    const since = club.since;
+    const teamGames =
+      since === null
+        ? squad.gameDates.length
+        : squad.gameDates.filter((date) => Date.parse(date) >= since).length;
+    if (teamGames === 0) continue;
+
+    const regular = t.squadGames >= Math.ceil(teamGames / 2);
     if (regular && !squad.lastSquad.includes(t.playerCode)) missed.add(t.playerCode);
   }
   return missed;

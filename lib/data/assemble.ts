@@ -40,9 +40,16 @@ export function buildPlayers({
   for (const t of totals) {
     byPlayer.set(t.playerCode, [...(byPlayer.get(t.playerCode) ?? []), t]);
   }
-  const missed = playersWhoMissedLastGame(totals, squads);
+  const current = latestActive(roster, "J");
+  const missed = playersWhoMissedLastGame(
+    totals,
+    squads,
+    new Map(
+      current.map((e) => [e.personCode, { teamCode: e.club.code, since: e.startDate }]),
+    ),
+  );
 
-  return latestActive(roster, "J")
+  return current
     .map((entry): Player => ({
       code: entry.personCode,
       name: entry.name,

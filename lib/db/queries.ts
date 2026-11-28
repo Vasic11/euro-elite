@@ -247,9 +247,9 @@ export const getPlayerGamesFromDb = unstable_cache(
  */
 export const getSeasonFromDb = unstable_cache(
   loadSeasonFromDb,
-  // v2: totals and squads instead of raw box lines; a new key so an entry of
-  // the old shape is never read after a deploy.
-  ["season-db-v2", SEASON_CODE],
+  // Bumped whenever SeasonData changes shape, so an entry of the old shape is
+  // never read after a deploy (v2: totals instead of lines, v3: squad dates).
+  ["season-db-v3", SEASON_CODE],
   {
     revalidate: DEFAULT_REVALIDATE_SECONDS,
     tags: [DB_CACHE_TAG],
