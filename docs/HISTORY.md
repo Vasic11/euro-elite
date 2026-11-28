@@ -90,6 +90,17 @@ of each section.
     new (SQL totals) over 140 games and 3350 lines — 0 differences for 344
     players (averages, order, `missedLastGame`; 2 transferred), 20 teams and
     the game log of 321 players (3148 entries).
+- **"Missed last game" after a transfer (Nov 2026, `fix/missed-last-game`).**
+  Chris Silva (ULK → PAR on 16 Nov) was flagged although he played PAR's last
+  game: the rule checked every club a player had box score lines for, and he
+  had been a ULK regular (7 of 14 games), missing from ULK's last game after
+  he left. Now only the current club (latest active stint) counts, and the
+  "regular" threshold counts that club's games since the contract
+  `startDate`, so a mid-season signing can become a regular (Silva: 3 of 3
+  PAR games). `TeamSquad` keeps game dates instead of a count (cache key
+  `season-db-v3`). On live data: 50 → 48 flags (Silva, and Lauvergne who left
+  PAR and is not shown anyway), none added. Derek Willis (1 of 14 PAR games)
+  stays unflagged by design; an "Out since" label comes later with transfers.
 
 ## Known risks
 

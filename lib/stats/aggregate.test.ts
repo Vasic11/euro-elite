@@ -4,6 +4,7 @@ import type { TeamSummary } from "@/lib/euroleague/types";
 
 import {
   averagesFromLines,
+  type CurrentClub,
   averagesFromTotals,
   type BoxLine,
   type GameBox,
@@ -135,8 +136,12 @@ describe("teamSquads", () => {
       { gameCode: 2, lines: [line("a", "RED"), line("x", "PAR")] },
     ];
     const squads = new Map(teamSquads(games, boxes).map((s) => [s.teamCode, s]));
-    expect(squads.get("RED")).toEqual({ teamCode: "RED", games: 2, lastSquad: ["a"] });
-    expect(squads.get("ZAL")).toEqual({ teamCode: "ZAL", games: 0, lastSquad: [] });
+    expect(squads.get("RED")).toEqual({
+      teamCode: "RED",
+      gameDates: [games[0].date, games[1].date],
+      lastSquad: ["a"],
+    });
+    expect(squads.get("ZAL")).toEqual({ teamCode: "ZAL", gameDates: [], lastSquad: [] });
   });
 
   it("ignores lines of games that are not a team's latest", () => {
@@ -173,11 +178,24 @@ describe("playersWhoMissedLastGame", () => {
     game(2, 2, "PAR", "RED", 75, 85),
     game(3, 3, "RED", "OLY", 90, 80),
   ];
-  const missed = (boxes: GameBox[]) =>
-    playersWhoMissedLastGame(
-      totalsFromLines(boxes.flatMap((b) => b.lines)),
-      teamSquads(games, boxes),
-    );
+  /** Everyone in the boxes is at the club of his last line, since the start of the season. */
+  const missed = (
+    boxes: GameBox[],
+    schedule = games,
+    current?: Map<string, CurrentClub>,
+  ) => {
+    const lines = boxes.flatMap((b) => b.lines);
+    const clubs =
+      current ??
+      new Map(lines.map((l) => [l.playerCode, { teamCode: l.teamCode, since: null }]));
+    return [
+      ...playersWhoMissedLastGame(
+        totalsFromLines(lines),
+        teamSquads(schedule, boxes),
+        clubs,
+      ),
+    ].sort();
+  };
 
   it("označava stalnog člana sastava koji nije bio na poslednjoj utakmici", () => {
     const boxes: GameBox[] = [
@@ -185,7 +203,7 @@ describe("playersWhoMissedLastGame", () => {
       { gameCode: 2, lines: [line("starter", "RED"), line("hurt", "RED")] },
       { gameCode: 3, lines: [line("starter", "RED")] },
     ];
-    expect([...missed(boxes)]).toEqual(["hurt"]);
+    expect(missed(boxes)).toEqual(["hurt"]);
   });
 
   it("ne označava igrača sa kraja klupe koji je retko u sastavu", () => {
@@ -195,14 +213,81 @@ describe("playersWhoMissedLastGame", () => {
       { gameCode: 2, lines: [line("starter", "RED")] },
       { gameCode: 3, lines: [line("starter", "RED")] },
     ];
-    expect(missed(boxes).size).toBe(0);
+    expect(missed(boxes)).toEqual([]);
   });
 
   it("does not flag anyone on a team without a latest game", () => {
     const totals = totalsFromLines([line("a", "RED")]);
+    const current = new Map([["a", { teamCode: "RED", since: null }]]);
     expect(
-      playersWhoMissedLastGame(totals, [{ teamCode: "RED", games: 1, lastSquad: null }])
-        .size,
+      playersWhoMissedLastGame(
+        totals,
+        [{ teamCode: "RED", gameDates: [], lastSquad: null }],
+        current,
+      ).size,
     ).toBe(0);
+  });
+
+  // Rounds 1-5 are on 1-5 Oct 2026 at 18:00 UTC.
+  const oct = (day: number) => Date.UTC(2026, 9, day);
+
+  it("ignores a former club after a transfer (Chris Silva, ULK → PAR)", () => {
+    const schedule = [
+      game(1, 1, "ULK", "BAR", 80, 70),
+      game(2, 2, "ULK", "OLY", 80, 70),
+      game(3, 3, "PAR", "RED", 80, 70),
+      game(4, 4, "BAR", "ULK", 77, 83),
+      game(5, 5, "DUB", "PAR", 71, 84),
+    ];
+    const boxes: GameBox[] = [
+      { gameCode: 1, lines: [line("silva", "ULK")] },
+      { gameCode: 2, lines: [line("silva", "ULK")] },
+      { gameCode: 3, lines: [line("silva", "PAR"), line("regular", "PAR")] },
+      { gameCode: 4, lines: [line("other", "ULK")] },
+      { gameCode: 5, lines: [line("silva", "PAR")] },
+    ];
+    const current = new Map<string, CurrentClub>([
+      // A regular at ULK (2 of 3 games) and missing from ULK's last game,
+      // but he is at PAR now and was in PAR's last game.
+      ["silva", { teamCode: "PAR", since: oct(3) }],
+      // PAR's own regular who missed PAR's last game is still flagged.
+      ["regular", { teamCode: "PAR", since: null }],
+      ["other", { teamCode: "ULK", since: null }],
+    ]);
+    expect(missed(boxes, schedule, current)).toEqual(["regular"]);
+  });
+
+  it("counts a newcomer's threshold only from his contract start", () => {
+    const schedule = [1, 2, 3, 4, 5].map((r) => game(r, r, "PAR", "RED", 80, 70));
+    const boxes: GameBox[] = schedule.map((g) => ({
+      gameCode: g.gameCode,
+      // "new" joined before round 4, played it, and missed round 5.
+      lines: g.round === 4 ? [line("new", "PAR"), line("x", "PAR")] : [line("x", "PAR")],
+    }));
+    const since = (date: number | null) =>
+      new Map<string, CurrentClub>([
+        ["new", { teamCode: "PAR", since: date }],
+        ["x", { teamCode: "PAR", since: null }],
+      ]);
+    // In 1 of PAR's 2 games since he signed: a regular.
+    expect(missed(boxes, schedule, since(oct(4)))).toEqual(["new"]);
+    // Counted over the whole season (1 of 5) he would never be one.
+    expect(missed(boxes, schedule, since(null))).toEqual([]);
+  });
+
+  it("does not flag a player signed after his club's last game", () => {
+    const boxes: GameBox[] = [{ gameCode: 3, lines: [line("x", "RED")] }];
+    const current = new Map<string, CurrentClub>([
+      ["new", { teamCode: "RED", since: oct(10) }],
+      ["x", { teamCode: "RED", since: null }],
+    ]);
+    // "new" has a totals row only if he was in a squad; give him one from earlier.
+    const totals = totalsFromLines([
+      line("new", "RED", { seconds: 0 }),
+      line("x", "RED"),
+    ]);
+    expect(playersWhoMissedLastGame(totals, teamSquads(games, boxes), current).size).toBe(
+      0,
+    );
   });
 });

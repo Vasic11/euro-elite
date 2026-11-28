@@ -149,7 +149,7 @@ Prosek PIR-a u poslednjih N odigranih utakmica (podrazumevano 5) poredi se sa pr
 
 - **Roster i treneri** se uzimaju klub po klub. Endpoint za celu sezonu vraća samo jednu stranicu rezultata i preskače igrače.
 - **Proseci i forma** se računaju iz box score-a svake odigrane utakmice: zbirove sabira baza, a proseke i procente `lib/stats/aggregate.ts`. Endpoint sa gotovim prosecima izostavlja neke igrače koji su igrali.
-- **„Missed last game“**: stalni član sastava (bio u sastavu na bar pola utakmica tima) koji nije bio u sastavu od 12 igrača na poslednjoj utakmici. Igrači sa kraja klupe se ne označavaju. API ne kaže razlog (povreda, bolest, odluka trenera), pa ne pišemo „povređen“.
+- **„Missed last game“**: stalni član sastava svog sadašnjeg kluba (bio u sastavu na bar pola utakmica tog kluba od početka ugovora) koji nije bio u sastavu od 12 igrača na poslednjoj utakmici. Bivši klub se ne gleda: posle transfera igrača nema u sastavu starog kluba, ali to nije propuštena utakmica. Igrači sa kraja klupe se ne označavaju. API ne kaže razlog (povreda, bolest, odluka trenera), pa ne pišemo „povređen“.
 - **Boje klubova** API ne vraća; ručno su upisane u `lib/euroleague/clubColors.ts`.
 
 ## Kako se stranice prave
